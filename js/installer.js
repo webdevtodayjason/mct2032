@@ -225,7 +225,7 @@ document.addEventListener('DOMContentLoaded', () => {
     checkBrowserCompatibility();
     
     // Console Easter egg
-    console.log('%c🔐 MCT2032 - Mega Cyber Tool 2032 🔐', 'font-size: 20px; font-weight: bold; color: #9333ea;');
+    console.log('%c🔐 MCT2032 - Mini Cyber Tool 2032 🔐', 'font-size: 20px; font-weight: bold; color: #9333ea;');
     console.log('%cWelcome to the matrix...', 'font-size: 14px; color: #a855f7;');
     console.log('%cFor authorized security testing only!', 'font-size: 12px; color: #ef4444;');
 });
