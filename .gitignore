@@ -1,0 +1,44 @@
+# Python
+*.pyc
+__pycache__/
+venv/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+*.log
+
+# ESP32/PlatformIO
+.pio/
+.vscode/
+*.bin
+*.elf
+
+# IDE
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Project specific
+exports/
+logs/*.log
+*.pcap
+node_modules/
+.env
+secrets.json
+
+# Claude
+CLAUDE.local.md
+
+# Backup files
+*.bak
+*.backup
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Temporary files
+*.tmp
+*.temp

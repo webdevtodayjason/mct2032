@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCT2032 - Mega Cyber Tool 2032 | Web Installer</title>
+    <meta name="description" content="Install MCT2032 firmware directly from your browser. A portable cybersecurity toolkit for ESP32-S3.">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/style.css">
+    
+    <!-- ESP Web Tools -->
+    <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
+</head>
+<body>
+    <!-- Matrix Rain Background -->
+    <canvas id="matrix-rain"></canvas>
+    
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo-container">
+                <div class="logo-glow"></div>
+                <h1 class="logo">MCT2032</h1>
+                <p class="tagline">MEGA CYBER TOOL 2032</p>
+            </div>
+        </header>
+
+        <!-- Hero Section -->
+        <section class="hero">
+            <div class="hero-content">
+                <h2 class="hero-title">
+                    <span class="text-gradient">Portable Cybersecurity</span>
+                    <br>
+                    <span class="text-glow">Toolkit</span>
+                </h2>
+                <p class="hero-description">
+                    Transform your ESP32-S3 into a powerful security research tool with advanced WiFi scanning, 
+                    BLE detection, and packet monitoring capabilities.
+                </p>
+                
+                <!-- Install Button -->
+                <div class="install-container">
+                    <esp-web-install-button
+                        id="install-button"
+                        manifest="./manifest.json"
+                        install-supported>
+                        <button slot="activate" class="cyber-button">
+                            <span class="button-text">Install Firmware</span>
+                            <span class="button-glow"></span>
+                        </button>
+                    </esp-web-install-button>
+                    <p class="browser-note">Requires Chrome or Edge browser</p>
+                </div>
+            </div>
+            
+            <!-- 3D Device Preview -->
+            <div class="device-preview">
+                <div class="device-frame">
+                    <div class="device-screen">
+                        <div class="radar-animation">
+                            <div class="radar-sweep"></div>
+                            <div class="radar-dot" style="top: 30%; left: 60%;"></div>
+                            <div class="radar-dot" style="top: 70%; left: 30%;"></div>
+                            <div class="radar-dot" style="top: 50%; left: 80%;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Grid -->
+        <section class="features">
+            <h2 class="section-title">Powerful Features</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">📡</div>
+                    <h3>WiFi Scanner</h3>
+                    <p>Detect and analyze 2.4GHz networks with detailed information including RSSI, encryption, and channel data.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📶</div>
+                    <h3>Packet Monitor</h3>
+                    <p>Real-time packet capture and analysis with statistics for beacon frames, probes, and data packets.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔷</div>
+                    <h3>BLE Scanner</h3>
+                    <p>Discover Bluetooth Low Energy devices, analyze services, and monitor device advertisements.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🛡️</div>
+                    <h3>Security Alerts</h3>
+                    <p>Detect deauth attacks, rogue APs, and suspicious network activity with real-time notifications.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">💾</div>
+                    <h3>Data Logging</h3>
+                    <p>Export scan results and packet captures to SD card in JSON format for later analysis.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎮</div>
+                    <h3>Gesture Control</h3>
+                    <p>Navigate menus with tilt gestures and use shake-to-clear for sensitive data protection.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Installation Steps -->
+        <section class="installation">
+            <h2 class="section-title">Installation Guide</h2>
+            <div class="steps-container">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h3>Connect Device</h3>
+                        <p>Connect your Waveshare ESP32-S3-LCD-1.47 to your computer via USB-C cable.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h3>Click Install</h3>
+                        <p>Click the "Install Firmware" button above. Your browser will prompt for serial port access.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h3>Select Port</h3>
+                        <p>Choose the serial port for your ESP32 device from the browser dialog.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h3>Wait for Flash</h3>
+                        <p>The firmware will be installed automatically. This takes about 2-3 minutes.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Admin Console Preview -->
+        <section class="admin-console">
+            <h2 class="section-title">Admin Console</h2>
+            <p class="section-description">
+                Control your MCT2032 device with our powerful Python-based admin console featuring a dark-themed GUI.
+            </p>
+            <div class="console-preview">
+                <div class="console-window">
+                    <div class="console-header">
+                        <div class="window-controls">
+                            <span class="control red"></span>
+                            <span class="control yellow"></span>
+                            <span class="control green"></span>
+                        </div>
+                        <span class="window-title">MCT2032 Admin Console</span>
+                    </div>
+                    <div class="console-content">
+                        <img src="assets/images/admin-console-preview.png" alt="Admin Console Preview" class="console-image">
+                    </div>
+                </div>
+            </div>
+            <div class="download-section">
+                <a href="https://github.com/webdevtodayjason/mct2032/releases" class="download-button">
+                    Download Admin Console
+                </a>
+            </div>
+        </section>
+
+        <!-- Technical Specs -->
+        <section class="specs">
+            <h2 class="section-title">Technical Specifications</h2>
+            <div class="specs-grid">
+                <div class="spec-item">
+                    <h4>Hardware</h4>
+                    <ul>
+                        <li>ESP32-S3 dual-core processor</li>
+                        <li>1.47" circular LCD (172×320)</li>
+                        <li>6-axis IMU sensor</li>
+                        <li>SD card support</li>
+                        <li>USB-C connectivity</li>
+                    </ul>
+                </div>
+                <div class="spec-item">
+                    <h4>Communication</h4>
+                    <ul>
+                        <li>Bluetooth Low Energy</li>
+                        <li>WiFi 802.11 b/g/n</li>
+                        <li>JSON command protocol</li>
+                        <li>Real-time notifications</li>
+                        <li>Async data streaming</li>
+                    </ul>
+                </div>
+                <div class="spec-item">
+                    <h4>Software</h4>
+                    <ul>
+                        <li>LVGL graphics library</li>
+                        <li>NimBLE stack</li>
+                        <li>Arduino framework</li>
+                        <li>Python admin console</li>
+                        <li>Cross-platform support</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Resources</h4>
+                    <ul>
+                        <li><a href="https://github.com/webdevtodayjason/mct2032">GitHub Repository</a></li>
+                        <li><a href="https://github.com/webdevtodayjason/mct2032/wiki">Documentation</a></li>
+                        <li><a href="https://github.com/webdevtodayjason/mct2032/issues">Report Issues</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Legal</h4>
+                    <p class="disclaimer">
+                        MCT2032 is intended for authorized security testing only. 
+                        Users are responsible for complying with all applicable laws.
+                    </p>
+                </div>
+                <div class="footer-section">
+                    <h4>Connect</h4>
+                    <p>Join our community for updates and support.</p>
+                    <div class="social-links">
+                        <a href="#" class="social-link">Discord</a>
+                        <a href="#" class="social-link">Twitter</a>
+                        <a href="#" class="social-link">YouTube</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 MCT2032 Project. MIT License.</p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/installer.js"></script>
+</body>
+</html>

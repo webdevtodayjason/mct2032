@@ -1,0 +1,157 @@
+name: Build and Release MCT2032
+
+on:
+  push:
+    branches: [main]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-firmware:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Cache PlatformIO
+      uses: actions/cache@v3
+      with:
+        path: ~/.platformio
+        key: ${{ runner.os }}-pio-${{ hashFiles('**/platformio.ini') }}
+        
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: Install PlatformIO
+      run: |
+        python -m pip install --upgrade pip
+        pip install platformio
+        
+    - name: Build firmware
+      run: |
+        cd mct2032-firmware
+        pio run
+        
+    - name: Rename firmware
+      run: |
+        cp mct2032-firmware/.pio/build/esp32-s3/firmware.bin mct2032_firmware_${{ github.sha }}.bin
+        
+    - name: Upload firmware artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: firmware
+        path: mct2032_firmware_*.bin
+
+  build-admin-console:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: Install dependencies
+      run: |
+        cd mct2032-admin
+        pip install -r requirements.txt
+        pip install pyinstaller
+        
+    - name: Build executable
+      run: |
+        cd mct2032-admin
+        pyinstaller --onefile --windowed --name MCT2032-Admin main.py
+        
+    - name: Upload admin console artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: admin-console-${{ matrix.os }}
+        path: mct2032-admin/dist/*
+
+  create-release:
+    needs: [build-firmware, build-admin-console]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Download artifacts
+      uses: actions/download-artifact@v3
+      
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: MCT2032 Release ${{ github.ref }}
+        body: |
+          # MCT2032 Release ${{ github.ref }}
+          
+          ## 🚀 What's New
+          - Enhanced WiFi scanning capabilities
+          - Improved BLE detection algorithms
+          - Optimized display performance
+          - Bug fixes and stability improvements
+          
+          ## 📦 Installation
+          
+          ### Firmware
+          1. Download the firmware binary below
+          2. Visit our [Web Installer](https://webdevtodayjason.github.io/mct2032)
+          3. Click "Install Firmware" and follow the prompts
+          
+          ### Admin Console
+          Download the appropriate version for your OS:
+          - Windows: `MCT2032-Admin.exe`
+          - macOS: `MCT2032-Admin` (make executable with `chmod +x`)
+          - Linux: `MCT2032-Admin` (make executable with `chmod +x`)
+          
+          ## ⚠️ Legal Notice
+          This tool is for authorized security testing only. Users are responsible for complying with all applicable laws.
+        draft: false
+        prerelease: false
+        
+    - name: Upload Release Assets
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./firmware/mct2032_firmware_*.bin
+        asset_name: mct2032_firmware_${{ github.ref_name }}.bin
+        asset_content_type: application/octet-stream
+
+  deploy-web-installer:
+    runs-on: ubuntu-latest
+    needs: build-firmware
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Update manifest version
+      run: |
+        VERSION=$(date +%Y.%m.%d)
+        sed -i "s/\"version\": \".*\"/\"version\": \"$VERSION\"/" web-installer/manifest.json
+        
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./web-installer
