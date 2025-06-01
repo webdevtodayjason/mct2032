@@ -39,13 +39,14 @@ jobs:
         
     - name: Rename firmware
       run: |
-        cp mct2032-firmware/.pio/build/esp32-s3/firmware.bin mct2032_firmware_${{ github.sha }}.bin
+        mkdir -p firmware
+        cp mct2032-firmware/.pio/build/*/firmware.bin firmware/mct2032_firmware_${{ github.sha }}.bin
         
     - name: Upload firmware artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: firmware
-        path: mct2032_firmware_*.bin
+        path: firmware/mct2032_firmware_*.bin
 
   build-admin-console:
     runs-on: ${{ matrix.os }}
@@ -74,7 +75,7 @@ jobs:
         pyinstaller --onefile --windowed --name MCT2032-Admin main.py
         
     - name: Upload admin console artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: admin-console-${{ matrix.os }}
         path: mct2032-admin/dist/*
@@ -89,7 +90,7 @@ jobs:
       uses: actions/checkout@v3
       
     - name: Download artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       
     - name: Create Release
       id: create_release
