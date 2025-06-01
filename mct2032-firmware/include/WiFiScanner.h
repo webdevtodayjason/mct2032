@@ -34,13 +34,14 @@ public:
     void init();
     bool startScan(uint8_t channel = 0);
     bool isScanning();
+    void stopScan();
     void processScanResults();
     
     std::vector<NetworkInfo>& getResults() { return networks; }
     size_t getNetworkCount() const { return networks.size(); }
     
     // JSON serialization
-    void toJSON(JsonDocument& doc);
+    void toJSON(DynamicJsonDocument& doc);
     String toJSONString();
     
     // Utility methods

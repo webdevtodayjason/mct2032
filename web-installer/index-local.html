@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCT2032 - Local Testing</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
+</head>
+<body>
+    <canvas id="matrix-rain"></canvas>
+    
+    <div class="container">
+        <header class="header">
+            <div class="logo-container">
+                <div class="logo-glow"></div>
+                <h1 class="logo">MCT2032</h1>
+                <p class="tagline">LOCAL TESTING MODE</p>
+            </div>
+        </header>
+
+        <section class="hero">
+            <div class="hero-content">
+                <h2 class="hero-title">
+                    <span class="text-gradient">Local Web Installer</span>
+                    <br>
+                    <span class="text-glow">Test Mode</span>
+                </h2>
+                <p class="hero-description">
+                    Testing the ESP Web Tools installation process locally. 
+                    This uses a test firmware file for demonstration.
+                </p>
+                
+                <div class="install-container">
+                    <esp-web-install-button
+                        id="install-button"
+                        manifest="./manifest-local.json"
+                        install-supported>
+                        <button slot="activate" class="cyber-button">
+                            <span class="button-text">Test Install</span>
+                            <span class="button-glow"></span>
+                        </button>
+                    </esp-web-install-button>
+                    <p class="browser-note">Requires Chrome or Edge browser</p>
+                </div>
+
+                <div style="margin-top: 2rem; padding: 1rem; background: rgba(147, 51, 234, 0.1); border: 1px solid var(--purple-500); border-radius: 0.5rem;">
+                    <h3 style="color: var(--purple-400); margin-bottom: 0.5rem;">Local Testing Notes:</h3>
+                    <ul style="color: var(--fg-secondary); font-size: 0.9rem; line-height: 1.8;">
+                        <li>This is using a placeholder firmware file</li>
+                        <li>Web Serial API works on localhost without HTTPS</li>
+                        <li>The actual firmware will be compiled separately</li>
+                        <li>Full version available at: <a href="index.html" style="color: var(--purple-400);">index.html</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="device-preview">
+                <div class="device-frame">
+                    <div class="device-screen">
+                        <div class="radar-animation">
+                            <div class="radar-sweep"></div>
+                            <div class="radar-dot" style="top: 30%; left: 60%;"></div>
+                            <div class="radar-dot" style="top: 70%; left: 30%;"></div>
+                            <div class="radar-dot" style="top: 50%; left: 80%;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script src="js/installer.js"></script>
+</body>
+</html>

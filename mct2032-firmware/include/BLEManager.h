@@ -51,11 +51,24 @@ private:
         
         void onWrite(NimBLECharacteristic* pCharacteristic) {
             std::string value = pCharacteristic->getValue();
+            Serial.printf("BLE: onWrite called, data length: %d\n", value.length());
+            
             if (value.length() > 0) {
-                Serial.printf("BLE: Received command: %s\n", value.c_str());
-                if (parent->commandCallback) {
-                    parent->commandCallback(String(value.c_str()));
+                Serial.print("BLE: Raw bytes: ");
+                for (size_t i = 0; i < value.length(); i++) {
+                    Serial.printf("%02X ", (uint8_t)value[i]);
                 }
+                Serial.println();
+                Serial.printf("BLE: Command string: %s\n", value.c_str());
+                
+                if (parent->commandCallback) {
+                    Serial.println("BLE: Calling command callback");
+                    parent->commandCallback(String(value.c_str()));
+                } else {
+                    Serial.println("BLE: ERROR - No command callback registered!");
+                }
+            } else {
+                Serial.println("BLE: ERROR - Empty command received");
             }
         }
     };
@@ -70,8 +83,11 @@ public:
     // Send data methods
     bool sendData(const String& data);
     bool sendStatus(const String& status);
-    bool sendResponse(const String& command, const String& status, JsonDocument& data);
+    bool sendResponse(const String& command, const String& status, const DynamicJsonDocument& data);
     bool sendError(const String& command, const String& error);
+    
+    // Chunked data sending for large responses
+    bool sendChunkedResponse(const String& command, const String& status, DynamicJsonDocument& data);
     
     // Notification helpers
     void notifyData(const String& data);
@@ -81,3 +97,5 @@ public:
     void checkConnection();
     void startAdvertising();
 };
+
+#endif // BLE_MANAGER_H

@@ -1,7 +1,7 @@
 # MCT2032 Admin Console Requirements
 bleak>=0.21.0
-tkinter
-asyncio
+# tkinter is part of Python standard library
+# asyncio is part of Python standard library
 aiofiles>=23.2.1
 pandas>=2.0.0
 matplotlib>=3.7.0

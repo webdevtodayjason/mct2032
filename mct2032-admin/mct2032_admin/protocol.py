@@ -27,6 +27,16 @@ class Commands(Enum):
     EXPORT_DATA = "EXPORT_DATA"
     SET_MODE = "SET_MODE"
     CLEAR_DATA = "CLEAR_DATA"
+    
+    # Advanced commands
+    DEAUTH_ATTACK = "DEAUTH_ATTACK"
+    BEACON_SPAM = "BEACON_SPAM"
+    PROBE_FLOOD = "PROBE_FLOOD"
+    EVIL_PORTAL = "EVIL_PORTAL"
+    RICKROLL = "RICKROLL"
+    PCAP_START = "PCAP_START"
+    PCAP_STOP = "PCAP_STOP"
+    PACKET_INJECT = "PACKET_INJECT"
 
 
 class ResponseStatus(Enum):
@@ -57,6 +67,10 @@ class DeviceMode(Enum):
     SCANNING = 1
     MONITORING = 2
     EXPORTING = 3
+    ATTACKING = 4
+    BEACON_SPAM = 5
+    EVIL_PORTAL = 6
+    PCAP_CAPTURE = 7
 
 
 class SecurityType(Enum):

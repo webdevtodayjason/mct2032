@@ -23,6 +23,16 @@
 #define CMD_SET_MODE        "SET_MODE"
 #define CMD_CLEAR_DATA      "CLEAR_DATA"
 
+// Advanced Commands (Marauder-inspired)
+#define CMD_DEAUTH_ATTACK   "DEAUTH_ATTACK"
+#define CMD_BEACON_SPAM     "BEACON_SPAM"
+#define CMD_PROBE_FLOOD     "PROBE_FLOOD"
+#define CMD_EVIL_PORTAL     "EVIL_PORTAL"
+#define CMD_RICKROLL        "RICKROLL"
+#define CMD_PCAP_START      "PCAP_START"
+#define CMD_PCAP_STOP       "PCAP_STOP"
+#define CMD_PACKET_INJECT   "PACKET_INJECT"
+
 // Response Status Codes
 #define STATUS_SUCCESS      "success"
 #define STATUS_ERROR        "error"
@@ -46,6 +56,10 @@
 #define MODE_SCANNING       1
 #define MODE_MONITORING     2
 #define MODE_EXPORTING      3
+#define MODE_ATTACKING      4
+#define MODE_BEACON_SPAM    5
+#define MODE_EVIL_PORTAL    6
+#define MODE_PCAP_CAPTURE   7
 
 // Maximum sizes
 #define MAX_COMMAND_SIZE    512

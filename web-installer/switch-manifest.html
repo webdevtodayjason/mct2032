@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MCT2032 Manifest Switcher</title>
+    <style>
+        body {
+            font-family: monospace;
+            background: #000;
+            color: #0f0;
+            padding: 20px;
+        }
+        button {
+            background: #030;
+            color: #0f0;
+            border: 1px solid #0f0;
+            padding: 10px 20px;
+            margin: 10px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #050;
+        }
+        .current {
+            color: #ff0;
+        }
+    </style>
+</head>
+<body>
+    <h1>MCT2032 Manifest Switcher</h1>
+    <p>Current manifest: <span id="current" class="current">Loading...</span></p>
+    
+    <button onclick="switchManifest('local')">Use Local (manifest.json)</button>
+    <button onclick="switchManifest('prod')">Use Production (manifest-prod.json)</button>
+    
+    <p>Status: <span id="status"></span></p>
+    
+    <script>
+        // Check current manifest
+        fetch('manifest-current.json').then(r => r.json()).then(data => {
+            document.getElementById('current').textContent = 
+                data.builds[0].parts[0].path.includes('github') ? 'Production' : 'Local';
+        }).catch(() => {
+            document.getElementById('current').textContent = 'manifest.json (default)';
+        });
+        
+        function switchManifest(type) {
+            const manifest = type === 'prod' ? 'manifest-prod.json' : 'manifest.json';
+            document.getElementById('status').textContent = 
+                `Switched to ${type === 'prod' ? 'Production' : 'Local'} manifest`;
+            document.getElementById('current').textContent = 
+                type === 'prod' ? 'Production' : 'Local';
+                
+            // Note: In production, you would actually copy the file server-side
+            // For local testing, manually rename/copy the desired manifest
+            alert(`Please copy ${manifest} to manifest.json to use it`);
+        }
+    </script>
+</body>
+</html>

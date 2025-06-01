@@ -9,7 +9,7 @@
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "../releases/mct2032-firmware-v1.0.0.bin",
+          "path": "https://github.com/webdevtodayjason/mct2032/releases/download/v1.0.0/mct2032_firmware_v1.0.0.bin",
           "offset": 0
         }
       ]

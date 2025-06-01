@@ -1,0 +1,61 @@
+<svg width="800" height="600" viewBox="0 0 800 600" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="600" fill="#0a0e27"/>
+  
+  <!-- Title Bar -->
+  <rect y="0" width="800" height="60" fill="#050816"/>
+  <text x="400" y="35" font-family="Orbitron, monospace" font-size="24" font-weight="bold" fill="#8b5cf6" text-anchor="middle">MCT2032 ADMIN CONSOLE</text>
+  
+  <!-- Connection Status -->
+  <circle cx="50" cy="30" r="8" fill="#10b981"/>
+  <text x="70" y="35" font-family="monospace" font-size="14" fill="#cbd5e1">Connected</text>
+  
+  <!-- Tabs -->
+  <rect x="20" y="80" width="120" height="40" rx="8" fill="#8b5cf6"/>
+  <text x="80" y="105" font-family="monospace" font-size="14" fill="#f8fafc" text-anchor="middle">WiFi Scanner</text>
+  
+  <rect x="150" y="80" width="120" height="40" rx="8" fill="#0f172a" stroke="#1e293b" stroke-width="1"/>
+  <text x="210" y="105" font-family="monospace" font-size="14" fill="#64748b" text-anchor="middle">Bluetooth</text>
+  
+  <rect x="280" y="80" width="120" height="40" rx="8" fill="#0f172a" stroke="#1e293b" stroke-width="1"/>
+  <text x="340" y="105" font-family="monospace" font-size="14" fill="#64748b" text-anchor="middle">Packet Monitor</text>
+  
+  <rect x="410" y="80" width="120" height="40" rx="8" fill="#0f172a" stroke="#1e293b" stroke-width="1"/>
+  <text x="470" y="105" font-family="monospace" font-size="14" fill="#64748b" text-anchor="middle">Console</text>
+  
+  <!-- WiFi Results Table -->
+  <rect x="20" y="140" width="760" height="400" rx="10" fill="#050816" stroke="#8b5cf6" stroke-width="1" opacity="0.5"/>
+  
+  <!-- Table Header -->
+  <rect x="20" y="140" width="760" height="40" rx="10" fill="#0f172a"/>
+  <text x="50" y="165" font-family="monospace" font-size="12" fill="#8b5cf6">SSID</text>
+  <text x="250" y="165" font-family="monospace" font-size="12" fill="#8b5cf6">BSSID</text>
+  <text x="450" y="165" font-family="monospace" font-size="12" fill="#8b5cf6">Channel</text>
+  <text x="550" y="165" font-family="monospace" font-size="12" fill="#8b5cf6">RSSI</text>
+  <text x="650" y="165" font-family="monospace" font-size="12" fill="#8b5cf6">Security</text>
+  
+  <!-- Sample Data Rows -->
+  <text x="50" y="210" font-family="monospace" font-size="12" fill="#f8fafc">Home_Network_5G</text>
+  <text x="250" y="210" font-family="monospace" font-size="12" fill="#cbd5e1">AA:BB:CC:DD:EE:FF</text>
+  <text x="450" y="210" font-family="monospace" font-size="12" fill="#cbd5e1">6</text>
+  <text x="550" y="210" font-family="monospace" font-size="12" fill="#10b981">-45 dBm</text>
+  <text x="650" y="210" font-family="monospace" font-size="12" fill="#cbd5e1">WPA2</text>
+  
+  <text x="50" y="240" font-family="monospace" font-size="12" fill="#f8fafc">Office_Guest</text>
+  <text x="250" y="240" font-family="monospace" font-size="12" fill="#cbd5e1">11:22:33:44:55:66</text>
+  <text x="450" y="240" font-family="monospace" font-size="12" fill="#cbd5e1">11</text>
+  <text x="550" y="240" font-family="monospace" font-size="12" fill="#f59e0b">-67 dBm</text>
+  <text x="650" y="240" font-family="monospace" font-size="12" fill="#cbd5e1">WPA2</text>
+  
+  <text x="50" y="270" font-family="monospace" font-size="12" fill="#f8fafc">CoffeeShop_WiFi</text>
+  <text x="250" y="270" font-family="monospace" font-size="12" fill="#cbd5e1">77:88:99:AA:BB:CC</text>
+  <text x="450" y="270" font-family="monospace" font-size="12" fill="#cbd5e1">1</text>
+  <text x="550" y="270" font-family="monospace" font-size="12" fill="#ef4444">-82 dBm</text>
+  <text x="650" y="270" font-family="monospace" font-size="12" fill="#ef4444">OPEN</text>
+  
+  <!-- Scan Button -->
+  <rect x="20" y="560" width="150" height="40" rx="8" fill="#8b5cf6"/>
+  <text x="95" y="585" font-family="monospace" font-size="14" fill="#f8fafc" text-anchor="middle">Scan Networks</text>
+  
+  <!-- Status -->
+  <text x="780" y="585" font-family="monospace" font-size="12" fill="#64748b" text-anchor="end">Networks: 15</text>
+</svg>

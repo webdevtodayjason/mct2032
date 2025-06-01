@@ -13,7 +13,7 @@ from queue import Queue, Empty
 import logging
 from datetime import datetime
 
-from .protocol import Protocol, NetworkInfo, DeviceStatus, PacketStats
+from .protocol import Protocol, ResponseStatus, NetworkInfo, DeviceStatus, PacketStats
 from .ble_controller import BLEController
 
 
@@ -212,6 +212,21 @@ class CyberToolGUI:
             height=40
         )
         self.wifi_scan_btn.pack(side="left", padx=10, pady=10)
+        
+        # Stop scan button
+        self.wifi_stop_btn = ctk.CTkButton(
+            control_frame,
+            text="Stop Scan",
+            command=self._on_wifi_stop_click,
+            fg_color=self.colors["error"],
+            hover_color="#991b1b",
+            corner_radius=8,
+            font=("SF Pro Display", 14),
+            width=100,
+            height=40,
+            state="disabled"
+        )
+        self.wifi_stop_btn.pack(side="left", padx=0, pady=10)
         
         # Channel selector
         channel_label = ctk.CTkLabel(
@@ -476,6 +491,11 @@ class CyberToolGUI:
         """Update WiFi scan results"""
         self.wifi_networks = networks
         
+        # Re-enable scan button, disable stop button and update status
+        self.wifi_scan_btn.configure(state="normal")
+        self.wifi_stop_btn.configure(state="disabled")
+        self.status_label.configure(text="Ready")
+        
         # Clear existing items
         for item in self.wifi_tree.get_children():
             self.wifi_tree.delete(item)
@@ -616,28 +636,64 @@ class CyberToolGUI:
             return
         
         self.wifi_scan_btn.configure(state="disabled")
+        self.wifi_stop_btn.configure(state="normal")
         self.status_label.configure(text="Scanning WiFi networks...")
         self.log_message("Starting WiFi scan...", "info")
+        
+        # Clear previous results
+        for item in self.wifi_tree.get_children():
+            self.wifi_tree.delete(item)
+        self.wifi_count_label.configure(text="Networks: 0")
         
         # Get channel
         channel = 0 if self.channel_var.get() == "All" else int(self.channel_var.get())
         
         # Run async scan
-        asyncio.run_coroutine_threadsafe(
+        self.wifi_scan_task = asyncio.run_coroutine_threadsafe(
             self._async_wifi_scan(channel),
             self.async_loop
         )
+    
+    def _on_wifi_stop_click(self):
+        """Handle WiFi stop scan button click"""
+        if hasattr(self, 'wifi_scan_task') and not self.wifi_scan_task.done():
+            self.wifi_scan_task.cancel()
+            self.log_message("Stopping WiFi scan...", "warning")
+            
+        self.wifi_scan_btn.configure(state="normal")
+        self.wifi_stop_btn.configure(state="disabled")
+        self.status_label.configure(text="WiFi scan stopped")
+        
+        # Send stop command to device (not implemented in firmware yet)
+        # asyncio.run_coroutine_threadsafe(
+        #     self.ble_controller.stop_scan(),
+        #     self.async_loop
+        # )
     
     async def _async_wifi_scan(self, channel: int):
         """Async WiFi scan"""
         response = await self.ble_controller.scan_wifi(channel=channel)
         
-        # Re-enable button
-        self.root.after(0, self.wifi_scan_btn.configure, {"state": "normal"})
-        self.root.after(0, self.status_label.configure, {"text": "Ready"})
-        
-        if response and response.get("status") == "error":
-            self.root.after(0, self.log_message, "WiFi scan failed", "error")
+        if response:
+            if response.get("status") == "error" or response.get("status") == ResponseStatus.TIMEOUT.value:
+                self.root.after(0, self.log_message, "WiFi scan failed", "error")
+                # Re-enable button on error
+                self.root.after(0, self.wifi_scan_btn.configure, {"state": "normal"})
+                self.root.after(0, self.wifi_stop_btn.configure, {"state": "disabled"})
+                self.root.after(0, self.status_label.configure, {"text": "Ready"})
+            elif response.get("status") == ResponseStatus.ERROR.value:
+                error_msg = response.get("error", "Unknown error")
+                self.root.after(0, self.log_message, f"WiFi scan error: {error_msg}", "error")
+                # Re-enable button on error
+                self.root.after(0, self.wifi_scan_btn.configure, {"state": "normal"})
+                self.root.after(0, self.wifi_stop_btn.configure, {"state": "disabled"})
+                self.root.after(0, self.status_label.configure, {"text": "Ready"})
+        else:
+            self.root.after(0, self.log_message, "WiFi scan failed: No response", "error")
+            # Re-enable button on error
+            self.root.after(0, self.wifi_scan_btn.configure, {"state": "normal"})
+            self.root.after(0, self.wifi_stop_btn.configure, {"state": "disabled"})
+            self.root.after(0, self.status_label.configure, {"text": "Ready"})
     
     def _on_ble_scan_click(self):
         """Handle BLE scan button click"""
@@ -659,17 +715,21 @@ class CyberToolGUI:
         """Async BLE scan"""
         response = await self.ble_controller.scan_ble()
         
-        # Re-enable button
-        self.root.after(0, self.ble_scan_btn.configure, {"state": "normal"})
-        self.root.after(0, self.status_label.configure, {"text": "Ready"})
-        
         if response and response.get("status") == "error":
             self.root.after(0, self.log_message, "Bluetooth scan failed", "error")
+            # Re-enable button on error
+            self.root.after(0, self.ble_scan_btn.configure, {"state": "normal"})
+            self.root.after(0, self.status_label.configure, {"text": "Ready"})
     
     def _update_ble_results(self, devices: list):
         """Update BLE scan results"""
         self.ble_devices = devices
         self.ble_count_label.configure(text=f"Devices: {len(devices)}")
+        
+        # Re-enable scan button and update status
+        self.ble_scan_btn.configure(state="normal")
+        self.status_label.configure(text="Ready")
+        
         self.log_message(f"Bluetooth scan complete: {len(devices)} devices found", "success")
     
     def _update_packet_stats(self, stats: Optional[PacketStats]):

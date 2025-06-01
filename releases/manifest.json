@@ -1,0 +1,15 @@
+{
+  "version": "1.0.0",
+  "date": "2025-06-01",
+  "firmware": {
+    "file": "mct2032-firmware-v1.0.0.bin",
+    "sha256": "a840b1e4d2adc128aa0f09592a3aea27907b6a0c8634ea1c5d707cf020cff7e2",
+    "size": 1129344
+  },
+  "admin": {
+    "windows": "mct2032-admin-v1.0.0-windows.zip",
+    "darwin": "mct2032-admin-v1.0.0-darwin.zip",
+    "linux": "mct2032-admin-v1.0.0-linux.zip"
+  },
+  "changelog": "Initial release with basic WiFi scanning and BLE connectivity"
+}

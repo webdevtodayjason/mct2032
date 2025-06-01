@@ -2,14 +2,14 @@
   "name": "MCT2032 - Mega Cyber Tool 2032",
   "version": "1.0.0",
   "home_assistant_domain": "mct2032",
-  "funding_url": "https://github.com/webdevtodayjason/mct2032",
+  "funding_url": "https://github.com/webdevtodayjason/MCT2032",
   "new_install_prompt_erase": false,
   "builds": [
     {
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "../releases/mct2032-firmware-v1.0.0.bin",
+          "path": "https://github.com/webdevtodayjason/MCT2032/releases/download/v1.0.0/mct2032-firmware-v1.0.0.bin",
           "offset": 0
         }
       ]

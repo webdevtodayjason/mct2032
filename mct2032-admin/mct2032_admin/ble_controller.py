@@ -32,6 +32,10 @@ class BLEController:
         self._response_event = asyncio.Event()
         self._last_response: Optional[Dict[str, Any]] = None
         
+        # For handling chunked responses
+        self._chunked_data: Dict[str, Any] = {}
+        self._chunk_buffer: List[Any] = []
+        
     async def scan_for_device(self, timeout: float = 10.0) -> Optional[BLEDevice]:
         """Scan for MCT2032 device"""
         logger.info("Scanning for CyberTool device...")
@@ -129,18 +133,59 @@ class BLEController:
         """Handle data notifications from device"""
         try:
             response = Protocol.parse_response(bytes(data))
-            logger.debug(f"Data notification: {response}")
+            logger.info(f"Data notification received: {response}")
             
-            # Store for command/response pattern
-            self._last_response = response
-            self._response_event.set()
+            # Handle chunked responses
+            if response.get("type") == "chunk":
+                cmd = response.get("cmd", "UNKNOWN")
+                chunk_index = response.get("chunkIndex", 0)
+                total_chunks = response.get("totalChunks", 0)
+                
+                logger.info(f"Received chunk {chunk_index + 1}/{total_chunks} for {cmd}")
+                
+                # Store network data from chunk
+                if "network" in response:
+                    self._chunk_buffer.append(response["network"])
+                
+                # Don't trigger response event yet for chunks
+                return
             
-            # Queue for GUI updates
+            # Check if this is a response to a command
+            if response.get("type") == "response":
+                # Log the command this response is for
+                cmd = response.get("cmd", "UNKNOWN")
+                status = response.get("status", "")
+                logger.info(f"Response is for command: {cmd}, status: {status}")
+                
+                # Handle chunked response start
+                if status == "chunked":
+                    logger.info(f"Starting chunked response for {cmd}")
+                    self._chunk_buffer = []
+                    self._chunked_data = {"cmd": cmd}
+                    return
+                
+                # Handle chunked response completion
+                if cmd in ["SCAN_WIFI", "SCAN_BLE"] and self._chunk_buffer:
+                    logger.info(f"Completing chunked response with {len(self._chunk_buffer)} networks")
+                    response["data"] = {"networks": self._chunk_buffer}
+                    self._chunk_buffer = []
+                
+                # Only store if we're waiting for a response
+                if not self._response_event.is_set():
+                    # Store for command/response pattern
+                    self._last_response = response
+                    self._response_event.set()
+                    logger.info(f"Stored response for command: {cmd}")
+                else:
+                    logger.warning(f"Received unexpected response for {cmd}, ignoring")
+            
+            # Always queue for GUI updates (for real-time data)
             if self.response_queue:
                 self.response_queue.put(("data", response))
                 
         except Exception as e:
             logger.error(f"Error handling data notification: {e}")
+            logger.error(f"Raw data: {data.hex()}")
     
     def _handle_status_notification(self, sender: int, data: bytearray):
         """Handle status notifications from device"""
@@ -166,21 +211,24 @@ class BLEController:
             # Clear previous response
             self._last_response = None
             self._response_event.clear()
+            logger.info(f"Cleared previous response, waiting for {command.value}")
             
             # Create and send command
             cmd_bytes = Protocol.create_command(command, params)
             logger.info(f"Sending command: {command.value}")
+            logger.info(f"Command bytes: {cmd_bytes.hex()}")
             await self.client.write_gatt_char(CMD_CHAR_UUID, cmd_bytes)
             
             # Wait for response
             try:
                 await asyncio.wait_for(self._response_event.wait(), timeout=timeout)
+                logger.info(f"Response received for {command.value}")
                 return self._last_response
             except asyncio.TimeoutError:
-                logger.error(f"Command timeout: {command.value}")
+                logger.error(f"Command timeout after {timeout}s: {command.value}")
                 return {
                     "status": ResponseStatus.TIMEOUT.value,
-                    "error": "Command timeout"
+                    "error": f"Command timeout after {timeout}s"
                 }
                 
         except Exception as e:
@@ -192,9 +240,11 @@ class BLEController:
     
     async def scan_wifi(self, duration: int = 3000, channel: int = 0) -> Optional[Dict[str, Any]]:
         """Perform WiFi scan"""
+        # Increase timeout to account for scan time + processing
         return await self.send_command(
             Commands.SCAN_WIFI,
-            {"duration": duration, "channel": channel}
+            {"duration": duration, "channel": channel},
+            timeout=10.0  # 10 seconds timeout
         )
     
     async def scan_ble(self, duration: int = 5000) -> Optional[Dict[str, Any]]:

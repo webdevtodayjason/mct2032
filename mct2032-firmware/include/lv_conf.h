@@ -643,4 +643,4 @@
 #endif /*LV_CONF_H*/
 
 /*Be sure every define has a default value*/
-#include "lvgl/src/lv_conf_checker.h"
+/* Checker include is handled by LVGL library itself */
