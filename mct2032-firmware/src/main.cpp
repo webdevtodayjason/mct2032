@@ -15,6 +15,9 @@
 #include "WiFiScanner.h"
 #include "CommandProcessor.h"
 #include "PacketMonitor.h"
+#include "USBKeyboard.h"
+#include "SDCardManager.h"
+#include "DuckyScript.h"
 
 // Declare fonts - commented out as they're not properly linked
 // LV_FONT_DECLARE(lv_font_montserrat_12)
@@ -51,9 +54,18 @@ BLEManager bleManager;
 WiFiScanner wifiScanner;
 PacketMonitor packetMonitor;
 CommandProcessor* commandProcessor = nullptr;
+USBKeyboard* usbKeyboard = nullptr;
+SDCardManager* sdCard = nullptr;
+DuckyScript* duckyScript = nullptr;
 
 // RGB LED instance
 Adafruit_NeoPixel rgbLED(RGB_LED_COUNT, RGB_LED_PIN, NEO_GRB + NEO_KHZ800);
+
+// SD Card pins for Waveshare ESP32-S3-LCD-1.47
+#define SD_CS_PIN   21  // SD_D3
+#define SD_SCK_PIN  14  // SD_SCK
+#define SD_MISO_PIN 16  // SD_D0 (MISO)
+#define SD_MOSI_PIN 15  // SD_CMD (MOSI)
 
 // UI elements
 lv_obj_t* status_label = nullptr;
@@ -74,100 +86,67 @@ void display_flush(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color_t *c
     lv_disp_flush_ready(disp_drv);
 }
 
+// Firmware version
+#define FIRMWARE_VERSION "v1.0.1"
+
 // Create UI elements
 void create_ui() {
-    // Create main screen with deep dark background
+    // Create main screen with black background
     lv_obj_t *scr = lv_scr_act();
-    lv_obj_set_style_bg_color(scr, lv_color_hex(0x0a0e27), 0);
+    lv_obj_set_style_bg_color(scr, lv_color_hex(0x000000), 0);
 
-    // Create circular mask for round display with gradient border effect
-    lv_obj_t *mask_circle = lv_obj_create(scr);
-    lv_obj_set_size(mask_circle, SCREEN_WIDTH - 2, SCREEN_WIDTH - 2);  // 170x170 circle
-    lv_obj_align(mask_circle, LV_ALIGN_TOP_MID, 0, (SCREEN_HEIGHT - SCREEN_WIDTH) / 2);
-    lv_obj_set_style_radius(mask_circle, LV_RADIUS_CIRCLE, 0);
-    lv_obj_set_style_bg_color(mask_circle, lv_color_hex(0x0f0f23), 0);
-    lv_obj_set_style_border_width(mask_circle, 3, 0);
-    lv_obj_set_style_border_color(mask_circle, lv_color_hex(0x8b5cf6), 0);
-    lv_obj_set_style_shadow_color(mask_circle, lv_color_hex(0x7c3aed), 0);
-    lv_obj_set_style_shadow_width(mask_circle, 8, 0);
-    lv_obj_set_style_shadow_spread(mask_circle, 2, 0);
-    lv_obj_clear_flag(mask_circle, LV_OBJ_FLAG_SCROLLABLE);
+    // Main container - use full screen height for rectangular display
+    lv_obj_t *main_cont = lv_obj_create(scr);
+    lv_obj_set_size(main_cont, SCREEN_WIDTH - 4, SCREEN_HEIGHT - 4);
+    lv_obj_center(main_cont);
+    lv_obj_set_style_bg_color(main_cont, lv_color_hex(0x000000), 0);
+    lv_obj_set_style_border_width(main_cont, 2, 0);
+    lv_obj_set_style_border_color(main_cont, lv_color_hex(0x00ff00), 0);
+    lv_obj_clear_flag(main_cont, LV_OBJ_FLAG_SCROLLABLE);
 
-    // Top section - Title with glitch effect styling
-    lv_obj_t *title_container = lv_obj_create(mask_circle);
-    lv_obj_set_size(title_container, 140, 35);
-    lv_obj_align(title_container, LV_ALIGN_TOP_MID, 0, 10);
-    lv_obj_set_style_bg_color(title_container, lv_color_hex(0x1a1a2e), 0);
-    lv_obj_set_style_border_width(title_container, 1, 0);
-    lv_obj_set_style_border_color(title_container, lv_color_hex(0x7c3aed), 0);
-    lv_obj_set_style_radius(title_container, 5, 0);
-    lv_obj_clear_flag(title_container, LV_OBJ_FLAG_SCROLLABLE);
-
-    lv_obj_t *title = lv_label_create(title_container);
+    // Title at top
+    lv_obj_t *title = lv_label_create(main_cont);
     lv_label_set_text(title, "MCT-2032");
-    lv_obj_center(title);
-    lv_obj_set_style_text_color(title, lv_color_hex(0xe0aaff), 0);
-    // lv_obj_set_style_text_font(title, &lv_font_montserrat_16, 0);
+    lv_obj_align(title, LV_ALIGN_TOP_MID, 0, 10);
+    lv_obj_set_style_text_color(title, lv_color_hex(0x00ff00), 0);
 
-    // Connection status indicator (top right)
-    connection_icon = lv_obj_create(mask_circle);
+    // Connection indicator
+    connection_icon = lv_obj_create(main_cont);
     lv_obj_set_size(connection_icon, 8, 8);
-    lv_obj_align(connection_icon, LV_ALIGN_TOP_RIGHT, -15, 15);
+    lv_obj_align(connection_icon, LV_ALIGN_TOP_RIGHT, -10, 12);
     lv_obj_set_style_radius(connection_icon, LV_RADIUS_CIRCLE, 0);
-    lv_obj_set_style_bg_color(connection_icon, lv_color_hex(0xff0000), 0);  // Red = disconnected
+    lv_obj_set_style_bg_color(connection_icon, lv_color_hex(0xff0000), 0);
     lv_obj_set_style_border_width(connection_icon, 0, 0);
 
-    // Mode indicator with cyber styling
-    mode_label = lv_label_create(mask_circle);
-    lv_label_set_text(mode_label, "[ IDLE ]");
+    // Mode label - positioned higher
+    mode_label = lv_label_create(main_cont);
+    lv_label_set_text(mode_label, "IDLE");
     lv_obj_align(mode_label, LV_ALIGN_TOP_MID, 0, 50);
-    lv_obj_set_style_text_color(mode_label, lv_color_hex(0x00ff00), 0);  // Green text
-    // lv_obj_set_style_text_font(mode_label, &lv_font_montserrat_12, 0);
+    lv_obj_set_style_text_color(mode_label, lv_color_hex(0x00ff00), 0);
 
-    // Center section - Main stats display
-    lv_obj_t *stats_container = lv_obj_create(mask_circle);
-    lv_obj_set_size(stats_container, 130, 50);
-    lv_obj_align(stats_container, LV_ALIGN_CENTER, 0, -5);
-    lv_obj_set_style_bg_opa(stats_container, LV_OPA_TRANSP, 0);
-    lv_obj_set_style_border_width(stats_container, 1, 0);
-    lv_obj_set_style_border_color(stats_container, lv_color_hex(0x3f3f74), 0);
-    lv_obj_set_style_border_opa(stats_container, LV_OPA_50, 0);
-    lv_obj_clear_flag(stats_container, LV_OBJ_FLAG_SCROLLABLE);
-
-    stats_label = lv_label_create(stats_container);
+    // Main status - center of screen
+    stats_label = lv_label_create(main_cont);
     lv_label_set_text(stats_label, "READY");
     lv_obj_center(stats_label);
-    lv_obj_set_style_text_color(stats_label, lv_color_hex(0x10ee10), 0);  // Matrix green
-    // lv_obj_set_style_text_font(stats_label, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_color(stats_label, lv_color_hex(0x00ff00), 0);
 
-    // Network count display (when scanning)
-    network_count_label = lv_label_create(mask_circle);
+    // Network count - below stats
+    network_count_label = lv_label_create(main_cont);
     lv_label_set_text(network_count_label, "");
-    lv_obj_align(network_count_label, LV_ALIGN_CENTER, 0, 25);
-    lv_obj_set_style_text_color(network_count_label, lv_color_hex(0x64748b), 0);
-    // lv_obj_set_style_text_font(network_count_label, &lv_font_montserrat_12, 0);
+    lv_obj_align(network_count_label, LV_ALIGN_CENTER, 0, 40);
+    lv_obj_set_style_text_color(network_count_label, lv_color_hex(0x8b5cf6), 0);  // Purple
 
-    // Bottom section - Status messages with terminal style
-    lv_obj_t *terminal_container = lv_obj_create(mask_circle);
-    lv_obj_set_size(terminal_container, 140, 25);
-    lv_obj_align(terminal_container, LV_ALIGN_BOTTOM_MID, 0, -10);
-    lv_obj_set_style_bg_color(terminal_container, lv_color_hex(0x000000), 0);
-    lv_obj_set_style_border_width(terminal_container, 1, 0);
-    lv_obj_set_style_border_color(terminal_container, lv_color_hex(0x2d2d52), 0);
-    lv_obj_set_style_radius(terminal_container, 3, 0);
-    lv_obj_clear_flag(terminal_container, LV_OBJ_FLAG_SCROLLABLE);
-
-    status_label = lv_label_create(terminal_container);
-    lv_label_set_text(status_label, "> INIT...");
-    lv_obj_align(status_label, LV_ALIGN_LEFT_MID, 5, 0);
-    lv_obj_set_style_text_color(status_label, lv_color_hex(0x00ff41), 0);  // Terminal green
-    // Use smaller default font instead of montserrat_10
+    // Status line - near bottom
+    status_label = lv_label_create(main_cont);
+    lv_label_set_text(status_label, "WAITING");
+    lv_obj_align(status_label, LV_ALIGN_BOTTOM_MID, 0, -40);
+    lv_obj_set_style_text_color(status_label, lv_color_hex(0x00ff00), 0);
     
-    // ASCII art decoration (optional fun element)
-    lv_obj_t *deco = lv_label_create(mask_circle);
-    lv_label_set_text(deco, "* * *");
-    lv_obj_align(deco, LV_ALIGN_BOTTOM_MID, 0, -40);
-    lv_obj_set_style_text_color(deco, lv_color_hex(0x3f3f74), 0);
+    // Version at very bottom
+    lv_obj_t *version_label = lv_label_create(main_cont);
+    lv_label_set_text(version_label, FIRMWARE_VERSION);
+    lv_obj_align(version_label, LV_ALIGN_BOTTOM_MID, 0, -10);
+    lv_obj_set_style_text_color(version_label, lv_color_hex(0x8b5cf6), 0);  // Purple
 }
 
 void setup() {
@@ -247,8 +226,29 @@ void setup() {
     // Note: packetMonitor.init() only sets up the instance, doesn't enable promiscuous mode
     packetMonitor.init();
     
-    // Create command processor
-    commandProcessor = new CommandProcessor(&bleManager, &wifiScanner, &packetMonitor);
+    // Initialize USB Keyboard (in simulation mode for now)
+    usbKeyboard = new USBKeyboard();
+    if (usbKeyboard->begin()) {
+        Serial.println("USB Keyboard initialized");
+    } else {
+        Serial.println("USB Keyboard initialization failed");
+    }
+    
+    // Initialize SD Card
+    sdCard = new SDCardManager();
+    if (sdCard->begin(SD_CS_PIN)) {
+        Serial.println("SD Card initialized");
+    } else {
+        Serial.println("SD Card initialization failed - check if card is inserted");
+    }
+    
+    // Initialize Ducky Script with USB keyboard
+    duckyScript = new DuckyScript(usbKeyboard);
+    Serial.println("Ducky Script initialized");
+    
+    // Create command processor with all components
+    commandProcessor = new CommandProcessor(&bleManager, &wifiScanner, &packetMonitor,
+                                          usbKeyboard, sdCard, duckyScript);
     commandProcessor->init();
     
     // Set BLE command callback
@@ -259,8 +259,9 @@ void setup() {
     });
     
     // Update status
-    lv_label_set_text(status_label, "> WAITING...");
+    lv_label_set_text(status_label, "WAITING");
     lv_label_set_text(stats_label, "NO LINK");
+    lv_label_set_text(mode_label, "IDLE");
 
     // Change LED to purple = ready
     rgbLED.setPixelColor(0, rgbLED.Color(128, 0, 128));
@@ -330,27 +331,27 @@ void loop() {
         lastMode = commandProcessor->getCurrentMode();
         switch (lastMode) {
             case MODE_SCANNING:
-                lv_label_set_text(mode_label, "[ SCANNING ]");
-                lv_obj_set_style_text_color(mode_label, lv_color_hex(0x00bfff), 0);  // Cyan
+                lv_label_set_text(mode_label, "SCANNING");
+                lv_obj_set_style_text_color(mode_label, lv_color_hex(0x00ffff), 0);  // Cyan
                 break;
             case MODE_MONITORING:
-                lv_label_set_text(mode_label, "[ MONITOR ]");
-                lv_obj_set_style_text_color(mode_label, lv_color_hex(0xff4500), 0);  // Orange
+                lv_label_set_text(mode_label, "MONITOR");
+                lv_obj_set_style_text_color(mode_label, lv_color_hex(0xffa500), 0);  // Orange
                 break;
             case MODE_ATTACKING:
-                lv_label_set_text(mode_label, "[ ATTACK ]");
+                lv_label_set_text(mode_label, "ATTACK");
                 lv_obj_set_style_text_color(mode_label, lv_color_hex(0xff0000), 0);  // Red
                 break;
             case MODE_BEACON_SPAM:
-                lv_label_set_text(mode_label, "[ BEACON ]");
+                lv_label_set_text(mode_label, "BEACON");
                 lv_obj_set_style_text_color(mode_label, lv_color_hex(0xff1493), 0);  // Pink
                 break;
             case MODE_PCAP_CAPTURE:
-                lv_label_set_text(mode_label, "[ CAPTURE ]");
+                lv_label_set_text(mode_label, "CAPTURE");
                 lv_obj_set_style_text_color(mode_label, lv_color_hex(0x9370db), 0);  // Purple
                 break;
             default:
-                lv_label_set_text(mode_label, "[ IDLE ]");
+                lv_label_set_text(mode_label, "IDLE");
                 lv_obj_set_style_text_color(mode_label, lv_color_hex(0x00ff00), 0);  // Green
                 break;
         }
@@ -362,12 +363,22 @@ void loop() {
     static unsigned long scanStartTime = 0;
     
     // Check if we have a pending scan request
-    if (commandProcessor && commandProcessor->getCurrentMode() == MODE_SCANNING && !scanInProgress) {
+    if (commandProcessor && commandProcessor->getCurrentMode() == MODE_SCANNING && !scanInProgress && !wifiScanner.isScanning()) {
         scanRequested = true;
         scanInProgress = true;
         scanStartTime = millis();
-        Serial.println("=== WiFi SCAN STARTED ===");
+        Serial.println("=== WiFi SCAN STARTED IN MAIN LOOP ===");
         Serial.printf("Mode: %d, Time: %lu\n", commandProcessor->getCurrentMode(), millis());
+        
+        // Actually start the WiFi scan here since CommandProcessor just sets the mode
+        if (!wifiScanner.startScan(0)) {  // 0 = all channels
+            Serial.println("ERROR: Failed to start WiFi scan in main loop!");
+            scanInProgress = false;
+            scanRequested = false;
+            if (commandProcessor) {
+                commandProcessor->setMode(MODE_IDLE);
+            }
+        }
     }
     
     if (scanInProgress) {
@@ -379,17 +390,17 @@ void loop() {
             
             // Animated scanning indicator
             const char* scanAnim[] = {
-                "> SCAN [|]",
-                "> SCAN [/]", 
-                "> SCAN [-]",
-                "> SCAN [\\]"
+                "SCAN .",
+                "SCAN ..", 
+                "SCAN ...",
+                "SCAN ...."
             };
             lv_label_set_text(status_label, scanAnim[animFrame % 4]);
             animFrame++;
             
             // Show elapsed time
             char buf[32];
-            snprintf(buf, sizeof(buf), "%d ms", (int)(millis() - scanStartTime));
+            snprintf(buf, sizeof(buf), "%ds", (int)((millis() - scanStartTime) / 1000));
             lv_label_set_text(stats_label, buf);
         }
         
@@ -407,17 +418,15 @@ void loop() {
                 
                 // Update display with results
                 char statusBuf[32];
-                snprintf(statusBuf, sizeof(statusBuf), "> FOUND: %d", wifiScanner.getNetworkCount());
+                snprintf(statusBuf, sizeof(statusBuf), "FOUND: %d", wifiScanner.getNetworkCount());
                 lv_label_set_text(status_label, statusBuf);
                 
                 char statsBuf[32];
                 snprintf(statsBuf, sizeof(statsBuf), "%d APs", wifiScanner.getNetworkCount());
                 lv_label_set_text(stats_label, statsBuf);
                 
-                // Show network count
-                char countBuf[64];
-                snprintf(countBuf, sizeof(countBuf), "%d networks detected", wifiScanner.getNetworkCount());
-                lv_label_set_text(network_count_label, countBuf);
+                // Clear network count label to avoid overlap
+                lv_label_set_text(network_count_label, "");
                 
                 // Check JSON size
                 size_t jsonSize = measureJson(doc);
@@ -429,7 +438,7 @@ void loop() {
                 }
             } else {
                 JsonArray emptyArray = doc.createNestedArray("networks");
-                lv_label_set_text(status_label, "> NO NETS");
+                lv_label_set_text(status_label, "NO NETS");
                 lv_label_set_text(stats_label, "0 APs");
                 lv_label_set_text(network_count_label, "No networks found");
                 Serial.println("Sending empty network list");
@@ -480,10 +489,10 @@ void loop() {
         
         // Reset to idle display
         if (bleManager.isConnected()) {
-            lv_label_set_text(status_label, "> READY");
+            lv_label_set_text(status_label, "READY");
             lv_label_set_text(stats_label, "ONLINE");
         } else {
-            lv_label_set_text(status_label, "> NO LINK");
+            lv_label_set_text(status_label, "NO LINK");
             lv_label_set_text(stats_label, "OFFLINE");
         }
         

@@ -14,12 +14,32 @@
 #include "BLEManager.h"
 #include "WiFiScanner.h"
 #include "PacketMonitor.h"
+#include "USBKeyboard.h"
+#include "SDCardManager.h"
+#include "DuckyScript.h"
+
+// Device Modes
+enum DeviceMode {
+    MODE_IDLE = 0,
+    MODE_SCANNING = 1,
+    MODE_MONITORING = 2,
+    MODE_ATTACKING = 3,
+    MODE_BEACON_SPAM = 4,
+    MODE_EVIL_PORTAL = 5,
+    MODE_PCAP_CAPTURE = 6,
+    MODE_USB_HID = 7,
+    MODE_HOST_RECON = 8,
+    MODE_EXFILTRATING = 9
+};
 
 class CommandProcessor {
 private:
     BLEManager* bleManager;
     WiFiScanner* wifiScanner;
     PacketMonitor* packetMonitor;
+    USBKeyboard* usbKeyboard;
+    SDCardManager* sdCard;
+    DuckyScript* duckyScript;
     
     // Device state
     uint8_t currentMode;
@@ -45,8 +65,35 @@ private:
     void handlePCAPStart(JsonVariant params);
     void handlePCAPStop(JsonVariant params);
     
+    // USB HID handlers
+    void handleUSBSetMode(JsonVariant params);
+    void handleUSBHIDExecute(JsonVariant params);
+    void handleUSBTypeString(JsonVariant params);
+    void handleHostNetworkScan(JsonVariant params);
+    void handleHostSystemInfo(JsonVariant params);
+    
+    // SD Card handlers
+    void handleSDListDir(JsonVariant params);
+    void handleSDListPayloads(JsonVariant params);
+    void handleSDLoadPayload(JsonVariant params);
+    void handleSDSavePayload(JsonVariant params);
+    void handleSDDeleteFile(JsonVariant params);
+    void handleSDGetInfo(JsonVariant params);
+    
+    // Ducky Script handlers
+    void handleDuckyScript(JsonVariant params);
+    void handleDuckyStop(JsonVariant params);
+    void handleDuckyChunk(JsonVariant params);
+    
+    // Chunking support for large Ducky Scripts
+    String pendingDuckyScript;
+    int expectedChunks;
+    int receivedChunks;
+    unsigned long lastChunkTime;
+    
 public:
-    CommandProcessor(BLEManager* ble, WiFiScanner* wifi, PacketMonitor* monitor);
+    CommandProcessor(BLEManager* ble, WiFiScanner* wifi, PacketMonitor* monitor,
+                    USBKeyboard* usb = nullptr, SDCardManager* sd = nullptr, DuckyScript* ducky = nullptr);
     
     void init();
     void processCommand(const String& commandStr);

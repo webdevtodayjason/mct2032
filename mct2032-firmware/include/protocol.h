@@ -31,6 +31,30 @@
 #define CMD_RICKROLL        "RICKROLL"
 #define CMD_PCAP_START      "PCAP_START"
 #define CMD_PCAP_STOP       "PCAP_STOP"
+
+// USB HID Commands
+#define CMD_USB_SET_MODE    "USB_SET_MODE"
+#define CMD_USB_HID_TYPE    "USB_HID_TYPE"
+#define CMD_USB_TYPE_STRING "USB_TYPE_STRING"
+#define CMD_USB_HID_EXECUTE "USB_HID_EXECUTE"
+#define CMD_DUCKY_SCRIPT    "DUCKY_SCRIPT"
+#define CMD_DUCKY_STOP      "DUCKY_STOP"
+#define CMD_DUCKY_CHUNK     "DUCKY_CHUNK"
+#define CMD_HOST_NET_SCAN   "HOST_NET_SCAN"
+#define CMD_HARVEST_CREDS   "HARVEST_CREDS"
+#define CMD_DEPLOY_PAYLOAD  "DEPLOY_PAYLOAD"
+
+// SD Card Commands
+#define CMD_SD_LIST_DIR     "SD_LIST_DIR"
+#define CMD_SD_LIST_PAYLOADS "SD_LIST_PAYLOADS"
+#define CMD_SD_READ_FILE    "SD_READ_FILE"
+#define CMD_SD_WRITE_FILE   "SD_WRITE_FILE"
+#define CMD_SD_DELETE_FILE  "SD_DELETE_FILE"
+#define CMD_SD_GET_INFO     "SD_GET_INFO"
+#define CMD_SD_LOAD_PAYLOAD "SD_LOAD_PAYLOAD"
+#define CMD_SD_SAVE_PAYLOAD "SD_SAVE_PAYLOAD"
+#define CMD_SD_LIST_LOGS    "SD_LIST_LOGS"
+#define CMD_HOST_INFO       "HOST_INFO"
 #define CMD_PACKET_INJECT   "PACKET_INJECT"
 
 // Response Status Codes
@@ -51,15 +75,15 @@
 #define ERR_OUT_OF_MEMORY   7
 #define ERR_MONITOR_FAIL    8
 
-// Device Modes
-#define MODE_IDLE           0
-#define MODE_SCANNING       1
-#define MODE_MONITORING     2
-#define MODE_EXPORTING      3
-#define MODE_ATTACKING      4
-#define MODE_BEACON_SPAM    5
-#define MODE_EVIL_PORTAL    6
-#define MODE_PCAP_CAPTURE   7
+// Device Modes - commented out to use enum in CommandProcessor.h
+// #define MODE_IDLE           0
+// #define MODE_SCANNING       1
+// #define MODE_MONITORING     2
+// #define MODE_EXPORTING      3
+// #define MODE_ATTACKING      4
+// #define MODE_BEACON_SPAM    5
+// #define MODE_EVIL_PORTAL    6
+// #define MODE_PCAP_CAPTURE   7
 
 // Maximum sizes
 #define MAX_COMMAND_SIZE    512

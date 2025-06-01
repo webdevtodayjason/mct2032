@@ -5,7 +5,7 @@ Handles Bluetooth LE communication with the ESP32 device
 
 import asyncio
 import logging
-from typing import Optional, Callable, Any, Dict
+from typing import Optional, Callable, Any, Dict, List
 from queue import Queue
 from bleak import BleakClient, BleakScanner
 from bleak.backends.device import BLEDevice
@@ -13,7 +13,9 @@ from bleak.backends.scanner import AdvertisementData
 
 from .protocol import (
     Protocol, Commands, ResponseStatus,
-    SERVICE_UUID, CMD_CHAR_UUID, DATA_CHAR_UUID, STATUS_CHAR_UUID
+    SERVICE_UUID, CMD_CHAR_UUID, DATA_CHAR_UUID, STATUS_CHAR_UUID,
+    CMD_DUCKY_SCRIPT, CMD_DUCKY_STOP, CMD_USB_TYPE_STRING,
+    CMD_SD_LIST_PAYLOADS, CMD_SD_LOAD_PAYLOAD
 )
 
 
@@ -283,3 +285,121 @@ class BLEController:
     async def clear_data(self) -> Optional[Dict[str, Any]]:
         """Clear all stored data"""
         return await self.send_command(Commands.CLEAR_DATA)
+    
+    async def _send_command(self, cmd_str: str, params: Optional[Dict[str, Any]] = None,
+                           timeout: float = 5.0) -> Optional[Dict[str, Any]]:
+        """Send command using string command name"""
+        if not self.connected or not self.client:
+            logger.error("Not connected to device")
+            return None
+        
+        try:
+            # Clear previous response
+            self._last_response = None
+            self._response_event.clear()
+            
+            # Create command JSON with params in nested structure
+            cmd_data = {"cmd": cmd_str}
+            if params:
+                cmd_data["params"] = params
+            
+            # Serialize and send
+            import json
+            cmd_json = json.dumps(cmd_data)
+            cmd_bytes = cmd_json.encode()
+            logger.info(f"Sending command: {cmd_str}")
+            logger.info(f"Command JSON: {cmd_json[:200]}...")  # First 200 chars
+            logger.info(f"Command size: {len(cmd_bytes)} bytes")
+            await self.client.write_gatt_char(CMD_CHAR_UUID, cmd_bytes)
+            
+            # Wait for response
+            try:
+                await asyncio.wait_for(self._response_event.wait(), timeout=timeout)
+                return self._last_response
+            except asyncio.TimeoutError:
+                logger.error(f"Command timeout: {cmd_str}")
+                return {"status": "error", "error": "Command timeout"}
+                
+        except Exception as e:
+            logger.error(f"Error sending command: {e}")
+            return {"status": "error", "error": str(e)}
+    
+    async def send_ducky_script(self, script: str = None, script_type: str = None, **kwargs) -> Optional[Dict[str, Any]]:
+        """Send Ducky Script to device, chunking if necessary"""
+        # Debug logging
+        logger.info(f"Sending Ducky Script: type={script_type}, script_len={len(script) if script else 0}")
+        
+        # Build params
+        params = {}
+        if script:
+            params["script"] = script
+        if script_type:
+            params["type"] = script_type
+        if "ip" in kwargs:
+            params["ip"] = kwargs["ip"]
+        if "port" in kwargs:
+            params["port"] = kwargs["port"]
+        
+        # Check if script exists and needs chunking
+        if script and len(script) > 300:  # Leave room for JSON overhead
+            logger.info(f"Script too large ({len(script)} chars), using chunked transfer...")
+            return await self._send_chunked_ducky_script(script)
+        else:
+            # Small script or type-only command, send normally
+            logger.debug(f"Script content: {script[:100] if script else 'None'}...")
+            return await self._send_command(CMD_DUCKY_SCRIPT, params)
+    
+    async def _send_chunked_ducky_script(self, script: str) -> Optional[Dict[str, Any]]:
+        """Send Ducky Script in chunks using DUCKY_CHUNK command"""
+        chunk_size = 300  # Conservative size to stay under BLE limit
+        chunks = [script[i:i+chunk_size] for i in range(0, len(script), chunk_size)]
+        total_chunks = len(chunks)
+        
+        logger.info(f"Splitting script into {total_chunks} chunks of {chunk_size} chars")
+        
+        last_response = None
+        for i, chunk in enumerate(chunks):
+            params = {
+                "chunkIndex": i,
+                "totalChunks": total_chunks,
+                "data": chunk,
+                "start": i == 0,
+                "end": i == total_chunks - 1
+            }
+            
+            logger.info(f"Sending chunk {i+1}/{total_chunks} ({len(chunk)} chars)")
+            
+            try:
+                response = await self._send_command("DUCKY_CHUNK", params, timeout=10.0)
+                if not response or response.get("status") != "success":
+                    logger.error(f"Failed to send chunk {i}: {response}")
+                    return response
+                last_response = response
+                
+                # Small delay between chunks
+                await asyncio.sleep(0.05)
+                
+            except Exception as e:
+                logger.error(f"Error sending chunk {i}: {e}")
+                return {"status": "error", "error": f"Chunk {i} failed: {str(e)}"}
+        
+        return last_response
+    
+    async def stop_ducky_script(self) -> Optional[Dict[str, Any]]:
+        """Stop running Ducky Script"""
+        return await self._send_command(CMD_DUCKY_STOP)
+    
+    async def send_usb_command(self, command: str, parameter: str = "") -> Optional[Dict[str, Any]]:
+        """Send USB HID command"""
+        params = {"command": command}
+        if parameter:
+            params["parameter"] = parameter
+        return await self._send_command(CMD_USB_TYPE_STRING, params)
+    
+    async def list_sd_payloads(self) -> Optional[Dict[str, Any]]:
+        """List payloads on SD card"""
+        return await self._send_command(CMD_SD_LIST_PAYLOADS)
+    
+    async def load_sd_payload(self, payload_name: str) -> Optional[Dict[str, Any]]:
+        """Load payload from SD card"""
+        return await self._send_command(CMD_SD_LOAD_PAYLOAD, {"payload": payload_name})
