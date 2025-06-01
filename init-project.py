@@ -36,7 +36,7 @@ def create_directory_structure():
 def create_claude_files():
     """Create Claude configuration files."""
     claude_files = {
-        "CLAUDE.md": """# MCT2032 - Mega Cyber Tool 2032
+        "CLAUDE.md": """# MCT2032 - Mini Cyber Tool 2032
 ## Claude Code Project Instructions
 
 [Content from the CLAUDE.md artifact above]
@@ -240,7 +240,7 @@ CLAUDE.local.md
 
 def create_readme():
     """Create project README."""
-    readme = """# MCT2032 - Mega Cyber Tool 2032
+    readme = """# MCT2032 - Mini Cyber Tool 2032
 
 A portable cybersecurity toolkit built on ESP32-S3 with circular display.
 

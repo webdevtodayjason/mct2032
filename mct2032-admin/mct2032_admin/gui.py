@@ -29,7 +29,7 @@ class CyberToolGUI:
     
     def __init__(self):
         self.root = ctk.CTk()
-        self.root.title("MCT2032 - Mega Cyber Tool 2032")
+        self.root.title("MCT2032 - Mini Cyber Tool 2032")
         self.root.geometry("1200x800")
         
         # Dark theme colors (matching shadcn/ui)

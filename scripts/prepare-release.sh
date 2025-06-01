@@ -34,7 +34,7 @@ cat > "$PROJECT_ROOT/releases/RELEASE-NOTES.md" << EOF
 
 ## 🎉 Initial Release
 
-This is the first release of the MCT2032 Mega Cyber Tool 2032!
+This is the first release of the MCT2032 Mini Cyber Tool 2032!
 
 ### Features
 

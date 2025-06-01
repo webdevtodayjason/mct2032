@@ -9,7 +9,7 @@
    - **Title**: `MCT2032 v1.0.0 - Initial Release`
    - **Description**:
      ```
-     ## MCT2032 - Mega Cyber Tool 2032
+     ## MCT2032 - Mini Cyber Tool 2032
      
      Initial release of the portable cybersecurity toolkit.
      

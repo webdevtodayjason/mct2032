@@ -1,5 +1,5 @@
 /**
- * MCT2032 - Mega Cyber Tool 2032
+ * MCT2032 - Mini Cyber Tool 2032
  * ESP32-S3 Main Firmware
  * 
  * Hardware: Waveshare ESP32-S3-LCD-1.47

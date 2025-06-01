@@ -117,7 +117,7 @@ After creating the release:
 
 ```json
 {
-  "name": "MCT2032 - Mega Cyber Tool 2032",
+  "name": "MCT2032 - Mini Cyber Tool 2032",
   "version": "1.0.0",
   "home_assistant_domain": "mct2032",
   "funding_url": "https://github.com/YOUR_USERNAME/mct2032",

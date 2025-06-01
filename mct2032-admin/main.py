@@ -29,7 +29,7 @@ def main():
     """Main application entry point"""
     print("""
 ╔═══════════════════════════════════════════════╗
-║          MCT2032 - Mega Cyber Tool 2032       ║
+║          MCT2032 - Mini Cyber Tool 2032       ║
 ║              Admin Console v1.0.0             ║
 ╚═══════════════════════════════════════════════╝
     """)

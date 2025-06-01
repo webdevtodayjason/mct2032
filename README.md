@@ -1,4 +1,4 @@
-# MCT2032 - Mega Cyber Tool 2032
+# MCT2032 - Mini Cyber Tool 2032
 
 <div align="center">
 
@@ -22,6 +22,8 @@
 ## 🎯 About The Project
 
 MCT2032 transforms the Waveshare ESP32-S3-LCD-1.47 into a powerful cybersecurity research tool. With its circular display, dual-core processor, and wireless capabilities, it's the perfect platform for security professionals and enthusiasts.
+
+**Why "Mini"?** At just 50mm × 38.5mm and $12.99, MCT2032 proves that powerful security tools don't need to be expensive or bulky. It's the most affordable entry point into professional WiFi security research.
 
 <div align="center">
   <img src="https://www.waveshare.com/media/catalog/product/e/s/esp32-s3-lcd-1.47-1.jpg" alt="Waveshare ESP32-S3-LCD-1.47" width="400">
@@ -358,13 +360,18 @@ python main.py
 
 | Feature | MCT2032 | Flipper Zero | WiFi Pineapple | Proxmark3 |
 |---------|---------|--------------|----------------|-----------|
-| **Price** | $12.99 | $169 | $99+ | $300+ |
-| **WiFi Attacks** | ✅ | ❌ | ✅ | ❌ |
-| **Bluetooth** | ✅ | ✅ | ❌ | ❌ |
-| **Display** | ✅ Color | ✅ Mono | ❌ | ❌ |
-| **Open Source** | ✅ | ✅ | ⚠️ | ✅ |
-| **Pocket Size** | ✅ | ✅ | ❌ | ✅ |
+| **Price** | $12.99 | $169 (+$29 for WiFi) | $99-$399 | $300+ |
+| **WiFi Attacks** | ✅ Native | ⚠️ With addon | ✅ Specialized | ❌ |
+| **Bluetooth** | ✅ BLE 5.0 | ✅ BLE | ❌ | ❌ |
+| **Display** | ✅ Color LCD | ✅ Monochrome | ❌ Web UI | ❌ |
+| **Sub-GHz Radio** | ❌ | ✅ | ❌ | ❌ |
+| **NFC/RFID** | ❌ | ✅ | ❌ | ✅ Specialized |
+| **Infrared** | ❌ | ✅ | ❌ | ❌ |
+| **Open Source** | ✅ | ✅ | ✅ | ✅ |
+| **Pocket Size** | ✅ (50mm) | ✅ | ⚠️ Varies | ✅ |
 | **Web Installer** | ✅ | ❌ | ❌ | ❌ |
+| **Battery** | USB-C Power | ✅ Built-in | ⚠️ Varies | USB Power |
+| **Target Users** | WiFi/BLE Research | Multi-Protocol | WiFi Pentesting | RFID Research |
 
 ---
 
