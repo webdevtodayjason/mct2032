@@ -1,0 +1,18 @@
+{
+  "name": "MCT2032 - Mega Cyber Tool 2032 (Local Test)",
+  "version": "1.0.0-test",
+  "home_assistant_domain": "mct2032",
+  "funding_url": "https://github.com/webdevtodayjason/mct2032",
+  "new_install_prompt_erase": false,
+  "builds": [
+    {
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "./test-firmware.bin",
+          "offset": 0
+        }
+      ]
+    }
+  ]
+}
