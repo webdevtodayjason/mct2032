@@ -42,3 +42,10 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
+
+# Release scripts and builds
+scripts/build-release.sh
+scripts/upload-release.sh
+scripts/update-manifest-local.sh
+release-build/
+web-installer/firmware.bin
