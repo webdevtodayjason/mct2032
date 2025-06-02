@@ -477,6 +477,20 @@ class CyberToolGUI:
         )
         self.stop_script_btn.pack(pady=5)
         
+        # SD Card test button
+        self.sd_test_btn = ctk.CTkButton(
+            button_frame,
+            text="Test SD Card",
+            command=self._on_test_sd_card,
+            fg_color=self.colors["warning"],
+            hover_color="#dc8a04",
+            corner_radius=8,
+            font=("SF Pro Display", 14),
+            width=200,
+            height=40
+        )
+        self.sd_test_btn.pack(pady=5)
+        
         # Quick actions
         quick_frame = ctk.CTkFrame(
             right_frame,
@@ -1086,3 +1100,51 @@ class CyberToolGUI:
             
             self.root.after(0, self.ducky_editor.set_script, script)
             self.root.after(0, self.log_message, f"Loaded payload: {payload_name}", "success")
+    
+    def _on_test_sd_card(self):
+        """Test SD card functionality"""
+        if not self.ble_controller.connected:
+            self.log_message("Not connected to device", "error")
+            return
+        
+        self.log_message("Testing SD card...", "info")
+        self.sd_test_btn.configure(state="disabled")
+        
+        asyncio.run_coroutine_threadsafe(
+            self._async_test_sd_card(),
+            self.async_loop
+        )
+    
+    async def _async_test_sd_card(self):
+        """Async SD card test"""
+        response = await self.ble_controller.test_sd_card()
+        
+        # Re-enable button
+        self.root.after(0, self.sd_test_btn.configure, {"state": "normal"})
+        
+        if response and response.get("status") == "success":
+            data = response.get("data", {})
+            
+            # Log detailed results
+            self.root.after(0, self.log_message, "=== SD Card Test Results ===", "info")
+            self.root.after(0, self.log_message, f"Initialized: {data.get('init', False)}", "info")
+            
+            if data.get('init'):
+                self.root.after(0, self.log_message, f"Total space: {data.get('total_mb', 0)} MB", "info")
+                self.root.after(0, self.log_message, f"Free space: {data.get('free_mb', 0)} MB", "info")
+                self.root.after(0, self.log_message, f"Write test: {'PASSED' if data.get('write', False) else 'FAILED'}", "success" if data.get('write', False) else "error")
+                self.root.after(0, self.log_message, f"Read test: {'PASSED' if data.get('read', False) else 'FAILED'}", "success" if data.get('read', False) else "error")
+                
+                # Show root files if any
+                root_files = data.get('root_files', [])
+                if root_files:
+                    self.root.after(0, self.log_message, f"Root files: {', '.join(root_files)}", "info")
+            else:
+                self.root.after(0, self.log_message, "SD card not initialized!", "error")
+                self.root.after(0, self.log_message, "Please check:", "warning")
+                self.root.after(0, self.log_message, "1. SD card is properly inserted", "warning")
+                self.root.after(0, self.log_message, "2. SD card is formatted as FAT32", "warning")
+                self.root.after(0, self.log_message, "3. Try reformatting with SD Card Formatter tool", "warning")
+        else:
+            error_msg = response.get("error", "Unknown error") if response else "No response"
+            self.root.after(0, self.log_message, f"SD card test failed: {error_msg}", "error")

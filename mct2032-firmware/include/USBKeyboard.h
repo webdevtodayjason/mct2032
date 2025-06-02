@@ -51,9 +51,27 @@ public:
     
     // Settings
     void setTypingDelay(uint32_t delay_ms);
+    
+private:
+    // Helper functions
+    uint8_t charToKeycode(char c);
+    bool needsShift(char c);
+    void pressModifier(uint8_t modifier);
+    void releaseModifier(uint8_t modifier);
 };
 
-// Key definitions for ESP32
+// Key modifier definitions
+#define KEY_MOD_LCTRL  0x01
+#define KEY_MOD_LSHIFT 0x02
+#define KEY_MOD_LALT   0x04
+#define KEY_MOD_LGUI   0x08
+#define KEY_MOD_RCTRL  0x10
+#define KEY_MOD_RSHIFT 0x20
+#define KEY_MOD_RALT   0x40
+#define KEY_MOD_RGUI   0x80
+
+// Key definitions - using Arduino USB HID keyboard codes
+// These match the USBHIDKeyboard library definitions
 #define KEY_LEFT_CTRL    0x80
 #define KEY_LEFT_SHIFT   0x81
 #define KEY_LEFT_ALT     0x82

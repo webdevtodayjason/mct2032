@@ -24,42 +24,118 @@ SDCardManager::~SDCardManager() {
 bool SDCardManager::begin(int csPin) {
     if (initialized) return true;
     
-    ESP_LOGI(TAG, "Initializing SD card on CS pin %d", csPin);
+    ESP_LOGI(TAG, "=== SD CARD INITIALIZATION ===");
+    ESP_LOGI(TAG, "CS Pin: %d", csPin);
+    ESP_LOGI(TAG, "Waveshare ESP32-S3-LCD-1.47 SD Pins:");
+    ESP_LOGI(TAG, "  SD_SCK: GPIO14");
+    ESP_LOGI(TAG, "  SD_D0 (MISO): GPIO16"); 
+    ESP_LOGI(TAG, "  SD_CMD (MOSI): GPIO15");
+    ESP_LOGI(TAG, "  SD_D3 (CS): GPIO21");
     
     // Configure SPI for Waveshare ESP32-S3-LCD-1.47
-    spi = new SPIClass(HSPI);
+    // ESP32-S3 uses SPI2 (FSPI) or SPI3 (HSPI)
+    spi = new SPIClass(FSPI);
+    
+    // Initialize SPI with correct pins for SD card
+    // Note: Waveshare uses SD_CMD (GPIO15) for MOSI, SD_D0 (GPIO16) for MISO
     spi->begin(14, 16, 15, csPin); // SCK, MISO, MOSI, CS
     
-    // Set slower SPI frequency for initialization (10MHz)
-    spi->setFrequency(10000000);
+    // Start with very slow SPI frequency for initialization (400kHz)
+    spi->setFrequency(400000);
+    
+    // Add small delay before first attempt
+    delay(100);
     
     // Try multiple times with delays
+    bool success = false;
     for (int attempt = 0; attempt < 3; attempt++) {
-        ESP_LOGI(TAG, "SD card init attempt %d", attempt + 1);
+        ESP_LOGI(TAG, "SD card init attempt %d/3", attempt + 1);
+        
+        // Try to begin SD card
         if (SD.begin(csPin, *spi)) {
-            ESP_LOGI(TAG, "SD card initialized on attempt %d", attempt + 1);
+            ESP_LOGI(TAG, "SD.begin() returned true on attempt %d", attempt + 1);
+            success = true;
             break;
+        } else {
+            ESP_LOGE(TAG, "SD.begin() returned false on attempt %d", attempt + 1);
+            // Try different approaches for each attempt
+            if (attempt == 1) {
+                ESP_LOGI(TAG, "Trying without custom SPI (using default SD library SPI)");
+                // Delete custom SPI and try default
+                delete spi;
+                spi = nullptr;
+                
+                // Try with just CS pin
+                if (SD.begin(csPin)) {
+                    ESP_LOGI(TAG, "Success with default SPI!");
+                    success = true;
+                    break;
+                }
+                
+                // Recreate custom SPI for next attempt
+                spi = new SPIClass(FSPI);
+                spi->begin(14, 16, 15, csPin);
+                spi->setFrequency(400000);
+            } else if (attempt == 2) {
+                ESP_LOGI(TAG, "Trying different CS pin (GPIO 10)");
+                // Try CS pin 10 instead of 21
+                if (SD.begin(10, *spi)) {
+                    ESP_LOGI(TAG, "Success with CS pin 10!");
+                    success = true;
+                    break;
+                }
+            }
         }
         delay(500);
     }
     
-    if (!SD.begin(csPin, *spi)) {
+    if (!success) {
         ESP_LOGE(TAG, "SD card initialization failed after 3 attempts!");
+        ESP_LOGE(TAG, "Please check:");
+        ESP_LOGE(TAG, "1. SD card is properly inserted");
+        ESP_LOGE(TAG, "2. SD card is formatted as FAT32");
+        ESP_LOGE(TAG, "3. SD card is not damaged");
+        ESP_LOGE(TAG, "4. Wiring connections are correct");
         delete spi;
         spi = nullptr;
         return false;
     }
     
+    // Check if we're using custom SPI or default
+    if (!spi) {
+        ESP_LOGI(TAG, "Using default SD library SPI configuration");
+    }
+    
     uint8_t cardType = SD.cardType();
+    ESP_LOGI(TAG, "Card type check: %d", cardType);
+    ESP_LOGI(TAG, "CARD_NONE=%d, CARD_MMC=%d, CARD_SD=%d, CARD_SDHC=%d", 
+              CARD_NONE, CARD_MMC, CARD_SD, CARD_SDHC);
+    
     if (cardType == CARD_NONE) {
-        ESP_LOGE(TAG, "No SD card attached");
+        ESP_LOGE(TAG, "No SD card detected (CARD_NONE)");
+        ESP_LOGI(TAG, "Possible causes:");
+        ESP_LOGI(TAG, "- Card not inserted properly");
+        ESP_LOGI(TAG, "- Card contacts dirty");
+        ESP_LOGI(TAG, "- Wrong CS pin");
+        ESP_LOGI(TAG, "- SPI conflict with display");
         return false;
+    } else if (cardType == CARD_MMC) {
+        ESP_LOGI(TAG, "Card type: MMC");
+    } else if (cardType == CARD_SD) {
+        ESP_LOGI(TAG, "Card type: SD");
+    } else if (cardType == CARD_SDHC) {
+        ESP_LOGI(TAG, "Card type: SDHC (High Capacity)");
+    } else {
+        ESP_LOGI(TAG, "Card type: Unknown (%d)", cardType);
     }
     
     totalSpace = SD.totalBytes();
     usedSpace = SD.usedBytes();
     
-    ESP_LOGI(TAG, "SD Card initialized. Size: %llu MB", totalSpace / (1024 * 1024));
+    ESP_LOGI(TAG, "SD Card initialized successfully!");
+    ESP_LOGI(TAG, "Total space: %llu MB", totalSpace / (1024 * 1024));
+    ESP_LOGI(TAG, "Used space: %llu MB", usedSpace / (1024 * 1024));
+    ESP_LOGI(TAG, "Free space: %llu MB", (totalSpace - usedSpace) / (1024 * 1024));
     
     // Create directory structure
     ensureDirectory("/mct2032");

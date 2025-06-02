@@ -403,3 +403,8 @@ class BLEController:
     async def load_sd_payload(self, payload_name: str) -> Optional[Dict[str, Any]]:
         """Load payload from SD card"""
         return await self._send_command(CMD_SD_LOAD_PAYLOAD, {"payload": payload_name})
+    
+    async def test_sd_card(self) -> Optional[Dict[str, Any]]:
+        """Test SD card functionality"""
+        from .protocol import CMD_SD_TEST
+        return await self._send_command(CMD_SD_TEST)

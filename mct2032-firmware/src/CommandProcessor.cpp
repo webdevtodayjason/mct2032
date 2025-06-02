@@ -6,6 +6,9 @@
 #include <SD.h>
 #include "USBKeyboard.h"
 #include "SDCardManager.h"
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+#include <freertos/semphr.h>
 
 CommandProcessor::CommandProcessor(BLEManager* ble, WiFiScanner* wifi, PacketMonitor* monitor,
                                  USBKeyboard* usb, SDCardManager* sd, DuckyScript* ducky) :
@@ -55,6 +58,7 @@ void CommandProcessor::init() {
     commandHandlers[CMD_SD_SAVE_PAYLOAD] = [this](JsonVariant params) { handleSDSavePayload(params); };
     commandHandlers[CMD_SD_DELETE_FILE] = [this](JsonVariant params) { handleSDDeleteFile(params); };
     commandHandlers[CMD_SD_GET_INFO] = [this](JsonVariant params) { handleSDGetInfo(params); };
+    commandHandlers[CMD_SD_TEST] = [this](JsonVariant params) { handleSDTest(params); };
     
     // Ducky Script command handlers
     commandHandlers[CMD_DUCKY_SCRIPT] = [this](JsonVariant params) { handleDuckyScript(params); };
@@ -620,6 +624,107 @@ void CommandProcessor::handleSDGetInfo(JsonVariant params) {
     response["initialized"] = true;
     
     bleManager->sendResponse(CMD_SD_GET_INFO, STATUS_SUCCESS, response);
+}
+
+// SD test task structure
+struct SDTestTaskParams {
+    SDCardManager* sdCard;
+    BLEManager* bleManager;
+    SemaphoreHandle_t done;
+    bool success;
+    String errorMsg;
+    uint32_t totalMB;
+    uint32_t freeMB;
+    bool writeOk;
+    bool readOk;
+};
+
+// SD test task function
+void sdTestTask(void* pvParameters) {
+    SDTestTaskParams* params = (SDTestTaskParams*)pvParameters;
+    
+    // Check if SD is initialized
+    if (!params->sdCard->isInitialized()) {
+        params->success = false;
+        params->errorMsg = "Not initialized";
+    } else {
+        params->success = true;
+        
+        // Get space info
+        params->totalMB = params->sdCard->getTotalSpace() / (1024 * 1024);
+        params->freeMB = params->sdCard->getFreeSpace() / (1024 * 1024);
+        
+        // Simple write test
+        const char* testPath = "/test.txt";
+        const char* testData = "OK";
+        
+        params->writeOk = params->sdCard->writeFile(testPath, (uint8_t*)testData, 2);
+        
+        if (params->writeOk) {
+            uint8_t buf[10];
+            params->readOk = params->sdCard->readFile(testPath, buf, sizeof(buf));
+            params->sdCard->deleteFile(testPath);
+        }
+    }
+    
+    // Signal completion
+    xSemaphoreGive(params->done);
+    vTaskDelete(NULL);
+}
+
+void CommandProcessor::handleSDTest(JsonVariant params) {
+    Serial.println("=== SD CARD TEST COMMAND ===");
+    
+    // Check if SD manager exists
+    if (!sdCard) {
+        StaticJsonDocument<256> response;
+        response["error"] = "No SD manager";
+        bleManager->sendResponse(CMD_SD_TEST, STATUS_ERROR, response);
+        return;
+    }
+    
+    // Create task parameters
+    SDTestTaskParams taskParams;
+    taskParams.sdCard = sdCard;
+    taskParams.bleManager = bleManager;
+    taskParams.done = xSemaphoreCreateBinary();
+    taskParams.success = false;
+    taskParams.writeOk = false;
+    taskParams.readOk = false;
+    
+    // Create task with larger stack
+    xTaskCreate(
+        sdTestTask,
+        "SD_Test",
+        8192,  // Larger stack size
+        &taskParams,
+        1,     // Low priority
+        NULL
+    );
+    
+    // Wait for completion (with timeout)
+    if (xSemaphoreTake(taskParams.done, pdMS_TO_TICKS(5000))) {
+        // Build response
+        StaticJsonDocument<512> response;
+        
+        if (taskParams.success) {
+            response["init"] = true;
+            response["total_mb"] = taskParams.totalMB;
+            response["free_mb"] = taskParams.freeMB;
+            response["write"] = taskParams.writeOk;
+            response["read"] = taskParams.readOk;
+            bleManager->sendResponse(CMD_SD_TEST, STATUS_SUCCESS, response);
+        } else {
+            response["error"] = taskParams.errorMsg;
+            bleManager->sendResponse(CMD_SD_TEST, STATUS_ERROR, response);
+        }
+    } else {
+        StaticJsonDocument<256> response;
+        response["error"] = "Test timeout";
+        bleManager->sendResponse(CMD_SD_TEST, STATUS_ERROR, response);
+    }
+    
+    vSemaphoreDelete(taskParams.done);
 }
 
 // Ducky Script command handlers

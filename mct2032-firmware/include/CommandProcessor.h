@@ -79,6 +79,7 @@ private:
     void handleSDSavePayload(JsonVariant params);
     void handleSDDeleteFile(JsonVariant params);
     void handleSDGetInfo(JsonVariant params);
+    void handleSDTest(JsonVariant params);
     
     // Ducky Script handlers
     void handleDuckyScript(JsonVariant params);
