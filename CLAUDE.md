@@ -215,4 +215,7 @@ When updating Dart tasks or logs:
 - Document decision rationale
 - Link related tasks/docs
 
+### ⚠️ Git Commit Guidelines
+- do not add "🤖 Generated with Claude Code" to git commits
+
 Remember: The goal is to create a professional, powerful cybersecurity tool with a stunning dark-themed interface that looks like it belongs in a hacker's toolkit!
